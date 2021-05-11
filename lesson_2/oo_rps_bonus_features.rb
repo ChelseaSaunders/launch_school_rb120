@@ -5,22 +5,18 @@ interesting if we were playing up to, say, 10 points. Whoever reaches 10 points
 first wins. Can you build this functionality? We have a new noun -- a score. Is
 that a new class, or a state of an existing class? You can explore both options
 and see which one works better.
-
 Add Lizard and Spock:
 This is a variation on the normal Rock Paper Scissors game by adding two more
 options - Lizard and Spock. The full explanation and rules are here.
-
 Add a class for each move:
 What would happen if we went even further and introduced 5 more classes, one for
 each move: Rock, Paper, Scissors, Lizard, and Spock. How would the code change?
 Can you make it work? After you're done, can you talk about whether this was a
 good design decision? What are the pros/cons?
-
 Keep track of a history of moves:
 As long as the user doesn't quit, keep track of a history of moves by both the
 human and computer. What data structure will you reach for? Will you use a new
 class, or an existing class? What will the display output look like?
-
 Computer personalities:
 We have a list of robot names for our Computer class, but other than the name,
 there's really nothing different about each of them. It'd be interesting to
@@ -150,12 +146,15 @@ class RPSGame
   end
 
   def display_welcome_message
+    pause
     puts "Welcome to Rock, Paper, Scissors!"
     pause
     puts "Today you will be playing against #{computer.name}."
+    pause
   end
 
   def display_goodbye_message
+    pause
     puts "Thanks for playing Rock, Paper, Scissors! Goodbye!"
   end
 
@@ -163,41 +162,33 @@ class RPSGame
     puts "#{human.name} chose #{human.move}."
     pause
     puts "#{computer.name} chose #{computer.move}."
+    pause
   end
 
-  def display_winner
+  def display_round_winner
+    pause
     if human.move > computer.move
-      puts "#{human.name} won!"
+      puts "#{human.name} won this round!"
     elsif computer.move > human.move
-      puts "#{computer.name} won!"
+      puts "#{computer.name} won this round!"
     else
-      puts "It's a tie!"
+      puts "It's a tie! When there is a tie, neither player gains points."
     end
   end
 
   def update_score
     if human.move > computer.move
       human.score.add_point
-      puts "#{human.name} now has #{human.score}!"
-      pause
-      puts "#{computer.name} has #{computer.score}."
     elsif computer.move > human.move
       computer.score.add_point
-      puts "#{computer.name} now has #{computer.score}!"
-      pause
-      puts "#{human.name} has #{human.score}."
-    else
-      puts "In a tie, neither player gains points."
-      pause
-      puts "#{human.name} has #{human.score}."
-      pause
-      puts "#{computer.name} has #{computer.score}."
     end
   end
 
   def tournament_winner?
     human.score.max_score? || computer.score.max_score?
   end
+
+  # rubocop:disable Layout/LineLength
 
   def display_human_won_tournament
     puts "Congratulations #{human.name}! you have reached the maximum score of #{human.score}!"
@@ -217,9 +208,12 @@ class RPSGame
     puts "#{human.name} needs #{human.score.max_score_difference} to win the tournament."
     pause
     puts "#{computer.name} needs #{computer.score.max_score_difference} to win the tournament."
+    pause
   end
 
-  def tournament_status
+  # rubocop:enable Layout/LineLength
+
+  def display_tournament_status
     if human.score.max_score?
       display_human_won_tournament
     elsif computer.score.max_score?
@@ -227,6 +221,15 @@ class RPSGame
     else
       display_no_tournament_winner
     end
+  end
+
+  def display_game_status
+    display_round_winner
+    puts "#{human.name} has #{human.score}."
+    pause
+    puts "#{computer.name} has #{computer.score}."
+    pause
+    display_tournament_status
   end
 
   def play_again?
@@ -243,26 +246,15 @@ class RPSGame
   end
 
   def play
-    pause
     display_welcome_message
-    pause
     loop do
       human.choose
-      pause
       computer.choose
-      pause
       display_moves
-      pause
-      display_winner
-      pause
       update_score
-      pause
-      tournament_status
-      break if tournament_winner?
-      pause
-      break unless play_again? == false)
+      display_game_status
+      break if tournament_winner? || (play_again? == false)
     end
-    pause
     display_goodbye_message
   end
 end
