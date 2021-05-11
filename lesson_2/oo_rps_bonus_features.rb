@@ -1,10 +1,5 @@
 =begin
-Keeping score:
-Right now, the game doesn't have very much dramatic flair. It'll be more
-interesting if we were playing up to, say, 10 points. Whoever reaches 10 points
-first wins. Can you build this functionality? We have a new noun -- a score. Is
-that a new class, or a state of an existing class? You can explore both options
-and see which one works better.
+
 Add Lizard and Spock:
 This is a variation on the normal Rock Paper Scissors game by adding two more
 options - Lizard and Spock. The full explanation and rules are here.
@@ -57,32 +52,65 @@ class Score
 end
 
 class Move
-  VALUES = %w(rock paper scissors)
+  attr_reader :value, :type
+  VALUES = %w(rock paper scissors lizard spock)
 
   def initialize(value)
     @value = value
+    set_type
+  end
+
+  def set_type
+    case value
+    when "rock"
+      @type = Rock.new
+    when "paper"
+      @type = Paper.new
+    when "scissors"
+      @type = Scissors.new
+    when "lizard"
+      @type = Lizard.new
+    when "spock"
+      @type = Spock.new
+    end
+  end
+
+  def >(other)
+    self.type.win?(other.type)
   end
 
   def to_s
-    @value
+    value
   end
+end
 
-  def scissors?
-    @value == 'scissors'
+class Rock
+  def win?(other)
+    true unless other.class == Spock || other.class == Paper
   end
+end
 
-  def paper?
-    @value == 'paper'
+class Paper
+  def win?(other)
+    true unless other.class == Scissors || other.class == Lizard
   end
+end
 
-  def rock?
-    @value == 'rock'
+class Scissors
+  def win?(other)
+    true unless other.class == Spock || other.class == Rock
   end
+end
 
-  def >(other_move)
-    (rock? && other_move.scissors?) ||
-      (paper? && other_move.rock?) ||
-      (scissors? && other_move.paper?)
+class Lizard
+  def win?(other)
+    true unless other.class == Scissors || other.class == Rock
+  end
+end
+
+class Spock
+  def win?(other)
+    true unless other.class == Paper || other.class == Lizard
   end
 end
 
@@ -114,7 +142,7 @@ class Human < Player
   def choose
     choice = nil
     loop do
-      puts "Please choose rock, paper, or scissors:"
+      puts "Please choose rock, paper, scissors, lizard, or spock:"
       choice = gets.chomp.downcase
       break if Move::VALUES.include?(choice)
       puts "Sorry, invalid choice."
@@ -147,7 +175,7 @@ class RPSGame
 
   def display_welcome_message
     pause
-    puts "Welcome to Rock, Paper, Scissors!"
+    puts "Hi #{human.name}! Welcome to Rock, Paper, Scissors, Lizard, Spock!"
     pause
     puts "Today you will be playing against #{computer.name}."
     pause
