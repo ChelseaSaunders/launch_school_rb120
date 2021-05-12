@@ -1,17 +1,22 @@
 =begin
+Per assignment, my thoughts on creating different classes for each move:
 
-Add Lizard and Spock:
-This is a variation on the normal Rock Paper Scissors game by adding two more
-options - Lizard and Spock. The full explanation and rules are here.
-Add a class for each move:
-What would happen if we went even further and introduced 5 more classes, one for
-each move: Rock, Paper, Scissors, Lizard, and Spock. How would the code change?
-Can you make it work? After you're done, can you talk about whether this was a
-good design decision? What are the pros/cons?
-Keep track of a history of moves:
-As long as the user doesn't quit, keep track of a history of moves by both the
-human and computer. What data structure will you reach for? Will you use a new
-class, or an existing class? What will the display output look like?
+I'm not sure that the design decision to move each Move selection into its own
+class is a good one, for a simple gameplay operation. It eliminates the ABC
+rubocop complant, but there are more simplistic ways of doing this, such as
+storing this information in a hash. However creating these classes also creates
+a lot of new code, and in my opinion slightly more confusing/roundabout method
+for determining wins, so if the only attributes of the new classes are methods
+to determine wins, I don't think it is worth the tradeoff.
+
+However if this game is expanded in such a way that each type of move had
+different attributes, for example if each type of win had a different output
+("Paper crushe rock", "Scissors cut paper", etc.), like what I made here, I
+can see the advantages to having different classes that would outweigh the
+costs.
+=end
+
+=begin
 Computer personalities:
 We have a list of robot names for our Computer class, but other than the name,
 there's really nothing different about each of them. It'd be interesting to
@@ -20,6 +25,16 @@ can always choose "rock". Or, "Hal" can have a very high tendency to choose
 "scissors", and rarely "rock", but never "paper". You can come up with the rules
 or personalities for each robot. How would you approach a feature like this?
 =end
+
+module Pausable
+  def pause
+    sleep(2)
+  end
+
+  def short_pause
+    sleep(1)
+  end
+end
 
 class Score
   MAX_SCORE = 2
@@ -51,32 +66,124 @@ class Score
   end
 end
 
+class Rock
+  include Pausable
+
+  def win?(other)
+    true if other.instance_of?(Scissors) || other.instance_of?(Lizard)
+  end
+
+  def display_win(other)
+    pause
+    if other.instance_of?(Scissors)
+      puts "Rock smashes scissors!"
+    elsif other.instance_of?(Lizard)
+      puts "Rock crushes lizard!"
+    end
+    pause
+  end
+end
+
+class Paper
+  include Pausable
+
+  def win?(other)
+    true if other.instance_of?(Rock) || other.instance_of?(Spock)
+  end
+
+  def display_win(other)
+    pause
+    if other.instance_of?(Rock)
+      puts "Paper covers rock!"
+    elsif other.instance_of?(Spock)
+      puts "Paper disproves Spock!"
+    end
+    pause
+  end
+end
+
+class Scissors
+  include Pausable
+
+  def win?(other)
+    true if other.instance_of?(Paper) || other.instance_of?(Lizard)
+  end
+
+  def display_win(other)
+    pause
+    if other.instance_of?(Paper)
+      puts "Scissors cut paper!"
+    elsif other.instance_of?(Lizard)
+      puts "Scissors decapitate lizard!"
+    end
+    pause
+  end
+end
+
+class Lizard
+  include Pausable
+
+  def win?(other)
+    true if other.instance_of?(Paper) || other.instance_of?(Spock)
+  end
+
+  def display_win(other)
+    pause
+    if other.instance_of?(Paper)
+      puts "Lizard eats paper!"
+    elsif other.instance_of?(Spock)
+      puts "Lizard poisons Spock!"
+    end
+    pause
+  end
+end
+
+class Spock
+  include Pausable
+
+  def win?(other)
+    true if other.instance_of?(Rock) || other.instance_of?(Scissors)
+  end
+
+  def display_win(other)
+    pause
+    if other.instance_of?(Rock)
+      puts "Spock vaporizes rock!"
+    elsif other.instance_of?(Scissors)
+      puts "Spock smashes scissors!"
+    end
+    pause
+  end
+end
+
 class Move
   attr_reader :value, :type
+
   VALUES = %w(rock paper scissors lizard spock)
+  TYPES = { 'rock' => Rock.new, 'paper' => Paper.new,
+            'scissors' => Scissors.new, 'lizard' => Lizard.new,
+            'Spock' => Spock.new }
 
   def initialize(value)
     @value = value
+    capitalize_spock
     set_type
   end
 
+  def capitalize_spock
+    @value = value.capitalize if value == "spock"
+  end
+
   def set_type
-    case value
-    when "rock"
-      @type = Rock.new
-    when "paper"
-      @type = Paper.new
-    when "scissors"
-      @type = Scissors.new
-    when "lizard"
-      @type = Lizard.new
-    when "spock"
-      @type = Spock.new
-    end
+    @type = TYPES[value]
   end
 
   def >(other)
-    self.type.win?(other.type)
+    type.win?(other.type)
+  end
+
+  def display_victory(other)
+    type.display_win(other.type)
   end
 
   def to_s
@@ -84,46 +191,24 @@ class Move
   end
 end
 
-class Rock
-  def win?(other)
-    true unless other.class == Spock || other.class == Paper
-  end
-end
-
-class Paper
-  def win?(other)
-    true unless other.class == Scissors || other.class == Lizard
-  end
-end
-
-class Scissors
-  def win?(other)
-    true unless other.class == Spock || other.class == Rock
-  end
-end
-
-class Lizard
-  def win?(other)
-    true unless other.class == Scissors || other.class == Rock
-  end
-end
-
-class Spock
-  def win?(other)
-    true unless other.class == Paper || other.class == Lizard
-  end
-end
-
 class Player
-  attr_accessor :move, :name, :score
+  attr_accessor :move, :name, :score, :past_choices
 
   def initialize
     set_name
     set_score
+    @past_choices = []
   end
 
   def set_score
     @score = Score.new
+  end
+
+  def display_past_choices
+    puts "#{name}'s past moves are as follows:"
+    past_choices.each_with_index do |move, index|
+      puts "Round #{index + 1}: #{move}"
+    end
   end
 end
 
@@ -142,12 +227,13 @@ class Human < Player
   def choose
     choice = nil
     loop do
-      puts "Please choose rock, paper, scissors, lizard, or spock:"
+      puts "Please choose rock, paper, scissors, lizard, or Spock:"
       choice = gets.chomp.downcase
       break if Move::VALUES.include?(choice)
       puts "Sorry, invalid choice."
     end
     self.move = Move.new(choice)
+    @past_choices << move
   end
 end
 
@@ -158,10 +244,13 @@ class Computer < Player
 
   def choose
     self.move = Move.new(Move::VALUES.sample)
+    @past_choices << move
   end
 end
 
 class RPSGame
+  include Pausable
+
   attr_reader :human, :computer
 
   def initialize
@@ -169,40 +258,63 @@ class RPSGame
     @computer = Computer.new
   end
 
-  def pause
-    sleep(2)
+  def clear_screen
+    system 'clear'
   end
 
   def display_welcome_message
-    pause
+    clear_screen
     puts "Hi #{human.name}! Welcome to Rock, Paper, Scissors, Lizard, Spock!"
     pause
     puts "Today you will be playing against #{computer.name}."
     pause
+    clear_screen
   end
 
   def display_goodbye_message
     pause
+    clear_screen
     puts "Thanks for playing Rock, Paper, Scissors! Goodbye!"
+    pause
+    clear_screen
+  end
+
+  def player_choices
+    human.choose
+    computer.choose
   end
 
   def display_moves
+    clear_screen
     puts "#{human.name} chose #{human.move}."
     pause
     puts "#{computer.name} chose #{computer.move}."
     pause
+    clear_screen
   end
 
+  # rubocop:disable Metrics/MethodLength
+
+  # This method is only one line over the maximimum; I believe it is clear and
+  # have not been able to refactor it to shorten it successfully and still get
+  # my desired output.
+
   def display_round_winner
-    pause
-    if human.move > computer.move
+    human_move = human.move
+    computer_move = computer.move
+
+    if human_move > computer_move
+      human_move.display_victory(computer_move)
       puts "#{human.name} won this round!"
-    elsif computer.move > human.move
+    elsif computer_move > human_move
+      computer_move.display_victory(human_move)
       puts "#{computer.name} won this round!"
     else
       puts "It's a tie! When there is a tie, neither player gains points."
     end
   end
+
+  # rubocop:enable Metrics/MethodLength
 
   def update_score
     if human.move > computer.move
@@ -218,6 +330,12 @@ class RPSGame
 
   # rubocop:disable Layout/LineLength
 
+  # These outputs don't occupy too much space on the screen when actually
+  # printed, and given that they are string outputs, rather than complicated
+  # lines of code, I feel it is ok to disable this cop.
+  # I would use a yaml file instead, but I don't know how to do interpollation
+  # with a yaml file.
+
   def display_human_won_tournament
     puts "Congratulations #{human.name}! you have reached the maximum score of #{human.score}!"
     pause
@@ -231,12 +349,14 @@ class RPSGame
   end
 
   def display_no_tournament_winner
+    clear_screen
     puts "No one has enough points to win the tournament."
     pause
     puts "#{human.name} needs #{human.score.max_score_difference} to win the tournament."
     pause
     puts "#{computer.name} needs #{computer.score.max_score_difference} to win the tournament."
     pause
+    clear_screen
   end
 
   # rubocop:enable Layout/LineLength
@@ -253,11 +373,37 @@ class RPSGame
 
   def display_game_status
     display_round_winner
+    pause
     puts "#{human.name} has #{human.score}."
     pause
     puts "#{computer.name} has #{computer.score}."
     pause
+    clear_screen
     display_tournament_status
+  end
+
+  def display_past_moves?
+    answer = nil
+    loop do
+      puts "Would you like to view all past moves? (y/n)"
+      answer = gets.chomp
+      break if %w(y n).include? answer.downcase
+      puts "Sorry, invalid answer! Please enter 'y' for 'yes' or 'n' for 'no'."
+    end
+
+    clear_screen
+
+    return true if answer == 'y'
+    false
+  end
+
+  def display_past_moves_both_players
+    if display_past_moves?
+      human.display_past_choices
+      computer.display_past_choices
+    end
+    pause
+    clear_screen
   end
 
   def play_again?
@@ -269,6 +415,8 @@ class RPSGame
       puts "Sorry, invalid answer! Please enter 'y' for 'yes' or 'n' for 'no'."
     end
 
+    clear_screen
+
     return true if answer == 'y'
     false
   end
@@ -276,12 +424,12 @@ class RPSGame
   def play
     display_welcome_message
     loop do
-      human.choose
-      computer.choose
+      player_choices
       display_moves
       update_score
       display_game_status
       break if tournament_winner? || (play_again? == false)
+      display_past_moves_both_players
     end
     display_goodbye_message
   end
