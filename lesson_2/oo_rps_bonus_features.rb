@@ -26,18 +26,21 @@ can always choose "rock". Or, "Hal" can have a very high tendency to choose
 or personalities for each robot. How would you approach a feature like this?
 =end
 
+require 'pry'
+
 module Pausable
   def pause
-    sleep(2)
+    sleep(3)
   end
 
-  def short_pause
-    sleep(1)
+  def puts_pause(string)
+    puts string
+    pause
   end
 end
 
 class Score
-  MAX_SCORE = 2
+  MAX_SCORE = 4
 
   attr_accessor :score
 
@@ -192,6 +195,8 @@ class Move
 end
 
 class Player
+  include Pausable
+
   attr_accessor :move, :name, :score, :past_choices
 
   def initialize
@@ -209,6 +214,7 @@ class Player
     past_choices.each_with_index do |move, index|
       puts "Round #{index + 1}: #{move}"
     end
+    pause
   end
 end
 
@@ -237,14 +243,71 @@ class Human < Player
   end
 end
 
-class Computer < Player
+class Characters < Player
+  def initialize
+    super
+    choose
+  end
+end
+
+class Hal < Characters
   def set_name
-    self.name = ['Robot', 'Internet Machine', 'Computer'].sample
+    @name = 'Hal'
+  end
+
+  def choose
+    self.move = Move.new('rock')
+  end
+end
+
+class Robot < Characters
+  def set_name
+    @name = 'Robot'
+  end
+
+  def choose
+    move_selection = nil
+    loop do
+      move_selection = Move::VALUES.sample
+      break if move_selection != 'paper'
+    end
+
+    self.move = Move.new(move_selection)
+  end
+end
+
+class InternetMachine < Characters
+  def set_name
+    @name = 'InternetMachine'
   end
 
   def choose
     self.move = Move.new(Move::VALUES.sample)
-    @past_choices << move
+  end
+end
+
+class Computer < Player
+  attr_accessor :character
+
+  CHARACTERS = [InternetMachine.new, Robot.new, Hal.new]
+
+  def initialize
+    @character = CHARACTERS.sample
+    super
+#    @move = character.move
+  end
+
+  def set_name
+    @name = character.name
+  end
+
+  def set_score
+    @score = character.score
+  end
+
+  def choose
+    self.move = character.choose
+    past_choices << move
   end
 end
 
@@ -262,20 +325,25 @@ class RPSGame
     system 'clear'
   end
 
+
+  # rubocop:disable Layout/LineLength
+
+  # This seems an appropriate welcome message and is barely over the line limit;
+  # altering it to please rubocop seems unnecessary.
+
   def display_welcome_message
     clear_screen
-    puts "Hi #{human.name}! Welcome to Rock, Paper, Scissors, Lizard, Spock!"
-    pause
-    puts "Today you will be playing against #{computer.name}."
-    pause
+    puts_pause("Hi #{human.name}! Welcome to Rock, Paper, Scissors, Lizard, Spock!")
+    puts_pause("Today you will be playing against #{computer.name}.")
     clear_screen
   end
+
+  # rubocop:enable Layout/LineLength
 
   def display_goodbye_message
     pause
     clear_screen
-    puts "Thanks for playing Rock, Paper, Scissors! Goodbye!"
-    pause
+    puts_pause("Thanks for playing Rock, Paper, Scissors! Goodbye!")
     clear_screen
   end
 
@@ -286,10 +354,8 @@ class RPSGame
 
   def display_moves
     clear_screen
-    puts "#{human.name} chose #{human.move}."
-    pause
-    puts "#{computer.name} chose #{computer.move}."
-    pause
+    puts_pause("#{human.name} chose #{human.move}.")
+    puts_pause("#{computer.name} chose #{computer.move}.")
     clear_screen
   end
 
@@ -305,12 +371,12 @@ class RPSGame
 
     if human_move > computer_move
       human_move.display_victory(computer_move)
-      puts "#{human.name} won this round!"
+      puts_pause("#{human.name} won this round!")
     elsif computer_move > human_move
       computer_move.display_victory(human_move)
-      puts "#{computer.name} won this round!"
+      puts_pause("#{computer.name} won this round!")
     else
-      puts "It's a tie! When there is a tie, neither player gains points."
+      puts_pause("It's a tie! When there's a tie, neither player gains points.")
     end
   end
 
@@ -337,25 +403,21 @@ class RPSGame
   # with a yaml file.
 
   def display_human_won_tournament
-    puts "Congratulations #{human.name}! you have reached the maximum score of #{human.score}!"
-    pause
-    puts "You won the tournament!"
+    puts_pause("Congratulations #{human.name}! you have reached the maximum score of #{human.score}!")
+    puts_pause("You won the tournament!")
   end
 
   def display_computer_won_tournament
-    puts "Sorry, #{human.name}, looks like #{computer.name} reached the maximum score of #{computer.score}."
-    pause
+    puts_pause("Sorry, #{human.name}, looks like #{computer.name} reached the maximum score of #{computer.score}.")
     puts "#{computer.name} won the tournament. Better luck next time!"
   end
 
   def display_no_tournament_winner
     clear_screen
-    puts "No one has enough points to win the tournament."
-    pause
-    puts "#{human.name} needs #{human.score.max_score_difference} to win the tournament."
-    pause
-    puts "#{computer.name} needs #{computer.score.max_score_difference} to win the tournament."
-    pause
+    puts_pause("No one has enough points to win the tournament.")
+    clear_screen
+    puts_pause("#{human.name} needs #{human.score.max_score_difference} to win the tournament.")
+    puts_pause("#{computer.name} needs #{computer.score.max_score_difference} to win the tournament.")
     clear_screen
   end
 
@@ -373,11 +435,9 @@ class RPSGame
 
   def display_game_status
     display_round_winner
-    pause
-    puts "#{human.name} has #{human.score}."
-    pause
-    puts "#{computer.name} has #{computer.score}."
-    pause
+    clear_screen
+    puts_pause("#{human.name} has #{human.score}.")
+    puts_pause("#{computer.name} has #{computer.score}.")
     clear_screen
     display_tournament_status
   end
@@ -388,11 +448,10 @@ class RPSGame
       puts "Would you like to view all past moves? (y/n)"
       answer = gets.chomp
       break if %w(y n).include? answer.downcase
-      puts "Sorry, invalid answer! Please enter 'y' for 'yes' or 'n' for 'no'."
+      puts "Sorry, invalid answer! Type 'y' for 'yes' or 'n' for 'no'."
     end
 
     clear_screen
-
     return true if answer == 'y'
     false
   end
@@ -402,7 +461,6 @@ class RPSGame
       human.display_past_choices
       computer.display_past_choices
     end
-    pause
     clear_screen
   end
 
@@ -412,7 +470,7 @@ class RPSGame
       puts "Would you like to play again? (y/n)"
       answer = gets.chomp
       break if %w(y n).include? answer.downcase
-      puts "Sorry, invalid answer! Please enter 'y' for 'yes' or 'n' for 'no'."
+      puts "Sorry, invalid answer! Type 'y' for 'yes' or 'n' for 'no'."
     end
 
     clear_screen
