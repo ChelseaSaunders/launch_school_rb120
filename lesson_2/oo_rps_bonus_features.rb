@@ -1,33 +1,3 @@
-=begin
-Per assignment, my thoughts on creating different classes for each move:
-
-I'm not sure that the design decision to move each Move selection into its own
-class is a good one, for a simple gameplay operation. It eliminates the ABC
-rubocop complant, but there are more simplistic ways of doing this, such as
-storing this information in a hash. However creating these classes also creates
-a lot of new code, and in my opinion slightly more confusing/roundabout method
-for determining wins, so if the only attributes of the new classes are methods
-to determine wins, I don't think it is worth the tradeoff.
-
-However if this game is expanded in such a way that each type of move had
-different attributes, for example if each type of win had a different output
-("Paper crushe rock", "Scissors cut paper", etc.), like what I made here, I
-can see the advantages to having different classes that would outweigh the
-costs.
-=end
-
-=begin
-Computer personalities:
-We have a list of robot names for our Computer class, but other than the name,
-there's really nothing different about each of them. It'd be interesting to
-explore how to build different personalities for each robot. For example, R2D2
-can always choose "rock". Or, "Hal" can have a very high tendency to choose
-"scissors", and rarely "rock", but never "paper". You can come up with the rules
-or personalities for each robot. How would you approach a feature like this?
-=end
-
-require 'pry'
-
 module Pausable
   def pause
     sleep(3)
@@ -278,7 +248,7 @@ end
 
 class InternetMachine < Characters
   def set_name
-    @name = 'InternetMachine'
+    @name = 'Internet Machine'
   end
 
   def choose
@@ -294,7 +264,6 @@ class Computer < Player
   def initialize
     @character = CHARACTERS.sample
     super
-#    @move = character.move
   end
 
   def set_name
@@ -324,7 +293,6 @@ class RPSGame
   def clear_screen
     system 'clear'
   end
-
 
   # rubocop:disable Layout/LineLength
 
@@ -412,6 +380,20 @@ class RPSGame
     puts "#{computer.name} won the tournament. Better luck next time!"
   end
 
+  def display_tournament_status?
+    answer = nil
+    loop do
+      puts "Would you like to see the tournament status? (y/n)"
+      answer = gets.chomp
+      break if %w(y n).include? answer.downcase
+      puts "Sorry, invalid answer! Type 'y' for 'yes' or 'n' for 'no'."
+    end
+
+    clear_screen
+    return true if answer == 'y'
+    false
+  end
+
   def display_no_tournament_winner
     clear_screen
     puts_pause("No one has enough points to win the tournament.")
@@ -428,7 +410,7 @@ class RPSGame
       display_human_won_tournament
     elsif computer.score.max_score?
       display_computer_won_tournament
-    else
+    elsif display_tournament_status?
       display_no_tournament_winner
     end
   end
