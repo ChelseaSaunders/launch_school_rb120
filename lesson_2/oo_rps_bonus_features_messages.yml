@@ -1,8 +1,12 @@
+enter_name: Please enter your name.
+invalid_name: Sorry, please enter a value.
 welcome: Welcome to Rock, Paper, Scissors, Lizard, Spock!
 tournament_rules: In order to win the tournament, you must be the first to get 5 wins!
 tournament_rules_2: If you do not wish to play that many games, you may quit after any match is complete.
-navigation_rules: Once you are done reading a screen (including this one), press 'Enter' to proceed to the next part of the game.
+navigation_rules: Once you are done reading a screen (including this one), press 'Enter' to proceed.
 press_enter: (press 'enter' to continue)
+choose_character: Please choose rock ('r'), paper ('p'), scissors ('sc'), lizard ('l'), or Spock ('sp').
+invalid_character_choice: Sorry, invalid choice.
 tie_game: It's a tie! When there's a tie, neither player gains points.
 view_tournament_status: Would you like to see the tournament status? (y/n)
 human_won_tournament: You won the tournament!

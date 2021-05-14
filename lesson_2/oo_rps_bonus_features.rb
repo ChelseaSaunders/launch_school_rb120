@@ -23,6 +23,12 @@ module Pausable
   end
 end
 
+module Clearable
+  def clear_screen
+    system 'clear'
+  end
+end
+
 module CharacterSelectable
   def select_character
     [InternetMachine.new, Robot.new, Hal.new].sample
@@ -30,7 +36,7 @@ module CharacterSelectable
 end
 
 class Score
-  MAX_SCORE = 4
+  MAX_SCORE = 5
 
   attr_accessor :score
 
@@ -186,6 +192,7 @@ end
 
 class Player
   include Pausable
+  include Clearable
 
   attr_accessor :move, :name, :score, :past_choices
 
@@ -209,24 +216,32 @@ class Player
 end
 
 class Human < Player
+  CHOICE_ABBREVIATIONS = { 'r' => 'rock', 'p' => 'paper', 'sc' => 'scissors',
+                           'l' => 'lizard', 'sp' => 'spock' }
   def set_name
     n = ''
     loop do
-      puts "Hello! Please enter your name:"
+      clear_screen
+      puts MESSAGES['enter_name']
       n = gets.chomp
       break unless n.empty?
-      puts "Sorry, please enter a value."
+      puts_pause(MESSAGES['invalid_name'])
     end
     self.name = n
+  end
+
+  def reassign_abbreviations?(answer)
+    CHOICE_ABBREVIATIONS.has_key?(answer)
   end
 
   def choose
     choice = nil
     loop do
-      puts "Please choose rock, paper, scissors, lizard, or Spock:"
+      puts MESSAGES['choose_character']
       choice = gets.chomp.downcase
+      choice = CHOICE_ABBREVIATIONS[choice] if reassign_abbreviations?(choice)
       break if Move::VALUES.include?(choice)
-      puts "Sorry, invalid choice."
+      puts_pause(MESSAGES['invalid_character_choice'])
     end
     self.move = Move.new(choice)
     @past_choices << move
@@ -280,6 +295,7 @@ end
 
 class RPSGame
   include Pausable
+  include Clearable
   include CharacterSelectable
 
   attr_reader :human, :computer
@@ -289,13 +305,9 @@ class RPSGame
     @computer = select_character
   end
 
-  def clear_screen
-    system 'clear'
-  end
-
   def display_welcome_message
     clear_screen
-    puts_pause("Hello #{human.name}!")
+    puts_pause("Hi #{human.name}!")
     puts_pause(MESSAGES['welcome'])
     puts_pause("Today you will be playing against #{computer.name}.")
     puts_enter(MESSAGES['navigation_rules'])
