@@ -1,11 +1,31 @@
+require 'yaml'
+MESSAGES = YAML.load_file('oo_rps_bonus_features_messages.yml')
+
 module Pausable
   def pause
-    sleep(3)
+    sleep(2)
   end
 
   def puts_pause(string)
     puts string
     pause
+  end
+
+  def press_enter_next_screen
+    puts ''
+    puts MESSAGES['press_enter']
+    $stdin.gets
+  end
+
+  def puts_enter(string)
+    puts string
+    press_enter_next_screen
+  end
+end
+
+module CharacterSelectable
+  def select_character
+    [InternetMachine.new, Robot.new, Hal.new].sample
   end
 end
 
@@ -213,24 +233,24 @@ class Human < Player
   end
 end
 
-class Characters < Player
-  def initialize
-    super
-    choose
+class Computer < Player
+  def choose
+    past_choices << move
   end
 end
 
-class Hal < Characters
+class Hal < Computer
   def set_name
     @name = 'Hal'
   end
 
   def choose
     self.move = Move.new('rock')
+    super
   end
 end
 
-class Robot < Characters
+class Robot < Computer
   def set_name
     @name = 'Robot'
   end
@@ -243,75 +263,51 @@ class Robot < Characters
     end
 
     self.move = Move.new(move_selection)
+    super
   end
 end
 
-class InternetMachine < Characters
+class InternetMachine < Computer
   def set_name
     @name = 'Internet Machine'
   end
 
   def choose
     self.move = Move.new(Move::VALUES.sample)
-  end
-end
-
-class Computer < Player
-  attr_accessor :character
-
-  CHARACTERS = [InternetMachine.new, Robot.new, Hal.new]
-
-  def initialize
-    @character = CHARACTERS.sample
     super
-  end
-
-  def set_name
-    @name = character.name
-  end
-
-  def set_score
-    @score = character.score
-  end
-
-  def choose
-    self.move = character.choose
-    past_choices << move
   end
 end
 
 class RPSGame
   include Pausable
+  include CharacterSelectable
 
   attr_reader :human, :computer
 
   def initialize
     @human = Human.new
-    @computer = Computer.new
+    @computer = select_character
   end
 
   def clear_screen
     system 'clear'
   end
 
-  # rubocop:disable Layout/LineLength
-
-  # This seems an appropriate welcome message and is barely over the line limit;
-  # altering it to please rubocop seems unnecessary.
-
   def display_welcome_message
     clear_screen
-    puts_pause("Hi #{human.name}! Welcome to Rock, Paper, Scissors, Lizard, Spock!")
+    puts_pause("Hello #{human.name}!")
+    puts_pause(MESSAGES['welcome'])
     puts_pause("Today you will be playing against #{computer.name}.")
+    puts_enter(MESSAGES['navigation_rules'])
+    clear_screen
+    puts_pause(MESSAGES['tournament_rules'])
+    puts_enter(MESSAGES['tournament_rules_2'])
     clear_screen
   end
 
-  # rubocop:enable Layout/LineLength
-
   def display_goodbye_message
-    pause
     clear_screen
-    puts_pause("Thanks for playing Rock, Paper, Scissors! Goodbye!")
+    puts_pause(MESSAGES['goodbye'])
     clear_screen
   end
 
@@ -323,7 +319,7 @@ class RPSGame
   def display_moves
     clear_screen
     puts_pause("#{human.name} chose #{human.move}.")
-    puts_pause("#{computer.name} chose #{computer.move}.")
+    puts_enter("#{computer.name} chose #{computer.move}.")
     clear_screen
   end
 
@@ -339,12 +335,12 @@ class RPSGame
 
     if human_move > computer_move
       human_move.display_victory(computer_move)
-      puts_pause("#{human.name} won this round!")
+      puts_enter("#{human.name} won this round!")
     elsif computer_move > human_move
       computer_move.display_victory(human_move)
-      puts_pause("#{computer.name} won this round!")
+      puts_enter("#{computer.name} won this round!")
     else
-      puts_pause("It's a tie! When there's a tie, neither player gains points.")
+      puts_enter(MESSAGES['tie_game'])
     end
   end
 
@@ -372,34 +368,33 @@ class RPSGame
 
   def display_human_won_tournament
     puts_pause("Congratulations #{human.name}! you have reached the maximum score of #{human.score}!")
-    puts_pause("You won the tournament!")
+    puts_enter(MESSAGES['human_won_tournament'])
   end
 
   def display_computer_won_tournament
     puts_pause("Sorry, #{human.name}, looks like #{computer.name} reached the maximum score of #{computer.score}.")
-    puts "#{computer.name} won the tournament. Better luck next time!"
+    puts_enter("#{computer.name} won the tournament. Better luck next time!")
   end
 
   def display_tournament_status?
     answer = nil
     loop do
-      puts "Would you like to see the tournament status? (y/n)"
+      puts MESSAGES['view_tournament_status']
       answer = gets.chomp
-      break if %w(y n).include? answer.downcase
-      puts "Sorry, invalid answer! Type 'y' for 'yes' or 'n' for 'no'."
+      break if %w(y n).include?(answer.downcase)
+      puts MESSAGES['invalid_answer']
     end
 
     clear_screen
-    return true if answer == 'y'
+    return true if answer.downcase == 'y'
     false
   end
 
   def display_no_tournament_winner
     clear_screen
-    puts_pause("No one has enough points to win the tournament.")
-    clear_screen
+    puts_pause(MESSAGES['no_tournament_winner'])
     puts_pause("#{human.name} needs #{human.score.max_score_difference} to win the tournament.")
-    puts_pause("#{computer.name} needs #{computer.score.max_score_difference} to win the tournament.")
+    puts_enter("#{computer.name} needs #{computer.score.max_score_difference} to win the tournament.")
     clear_screen
   end
 
@@ -419,7 +414,7 @@ class RPSGame
     display_round_winner
     clear_screen
     puts_pause("#{human.name} has #{human.score}.")
-    puts_pause("#{computer.name} has #{computer.score}.")
+    puts_enter("#{computer.name} has #{computer.score}.")
     clear_screen
     display_tournament_status
   end
@@ -427,14 +422,14 @@ class RPSGame
   def display_past_moves?
     answer = nil
     loop do
-      puts "Would you like to view all past moves? (y/n)"
+      puts MESSAGES['view_past_moves']
       answer = gets.chomp
       break if %w(y n).include? answer.downcase
-      puts "Sorry, invalid answer! Type 'y' for 'yes' or 'n' for 'no'."
+      puts MESSAGES['invalid_answer']
     end
 
     clear_screen
-    return true if answer == 'y'
+    return true if answer.downcase == 'y'
     false
   end
 
@@ -442,6 +437,7 @@ class RPSGame
     if display_past_moves?
       human.display_past_choices
       computer.display_past_choices
+      press_enter_next_screen
     end
     clear_screen
   end
@@ -449,15 +445,15 @@ class RPSGame
   def play_again?
     answer = nil
     loop do
-      puts "Would you like to play again? (y/n)"
+      puts MESSAGES['play_again']
       answer = gets.chomp
       break if %w(y n).include? answer.downcase
-      puts "Sorry, invalid answer! Type 'y' for 'yes' or 'n' for 'no'."
+      puts MESSAGES['invalid_answer']
     end
 
     clear_screen
 
-    return true if answer == 'y'
+    return true if answer.downcase == 'y'
     false
   end
 

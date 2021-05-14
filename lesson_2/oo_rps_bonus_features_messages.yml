@@ -1,0 +1,13 @@
+welcome: Welcome to Rock, Paper, Scissors, Lizard, Spock!
+tournament_rules: In order to win the tournament, you must be the first to get 5 wins!
+tournament_rules_2: If you do not wish to play that many games, you may quit after any match is complete.
+navigation_rules: Once you are done reading a screen (including this one), press 'Enter' to proceed to the next part of the game.
+press_enter: (press 'enter' to continue)
+tie_game: It's a tie! When there's a tie, neither player gains points.
+view_tournament_status: Would you like to see the tournament status? (y/n)
+human_won_tournament: You won the tournament!
+no_tournament_winner: No one has enough points to win the tournament.
+view_past_moves: Would you like to view all past moves? (y/n)
+play_again: Would you like to play again? (y/n)
+invalid_answer: Sorry, invalid answer! Type 'y' for 'yes' or 'n' for 'no'.
+goodbye: Thanks for playing Rock, Paper, Scissors! Goodbye!
