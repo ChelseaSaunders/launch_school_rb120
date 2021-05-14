@@ -36,7 +36,7 @@ module CharacterSelectable
 end
 
 class Score
-  MAX_SCORE = 5
+  MAX = 5
 
   attr_accessor :score
 
@@ -52,12 +52,12 @@ class Score
     score == 1 ? 'point' : 'points'
   end
 
-  def max_score?
-    score == MAX_SCORE
+  def max?
+    score == MAX
   end
 
-  def max_score_difference
-    MAX_SCORE - score
+  def max_difference
+    MAX - score
   end
 
   def to_s
@@ -231,7 +231,7 @@ class Human < Player
   end
 
   def reassign_abbreviations?(answer)
-    CHOICE_ABBREVIATIONS.has_key?(answer)
+    CHOICE_ABBREVIATIONS.key?(answer)
   end
 
   def choose
@@ -300,6 +300,21 @@ class RPSGame
 
   attr_reader :human, :computer
 
+  def play
+    display_welcome_message
+    loop do
+      player_choices
+      display_moves
+      update_score
+      display_game_status
+      break if tournament_winner? || (play_again? == false)
+      display_past_moves_both_players
+    end
+    display_goodbye_message
+  end
+
+  private
+
   def initialize
     @human = Human.new
     @computer = select_character
@@ -367,7 +382,7 @@ class RPSGame
   end
 
   def tournament_winner?
-    human.score.max_score? || computer.score.max_score?
+    human.score.max? || computer.score.max?
   end
 
   # rubocop:disable Layout/LineLength
@@ -398,24 +413,23 @@ class RPSGame
     end
 
     clear_screen
-    return true if answer.downcase == 'y'
-    false
+    answer.downcase == 'y'
   end
 
   def display_no_tournament_winner
     clear_screen
     puts_pause(MESSAGES['no_tournament_winner'])
-    puts_pause("#{human.name} needs #{human.score.max_score_difference} to win the tournament.")
-    puts_enter("#{computer.name} needs #{computer.score.max_score_difference} to win the tournament.")
+    puts_pause("#{human.name} needs #{human.score.max_difference} to win the tournament.")
+    puts_enter("#{computer.name} needs #{computer.score.max_difference} to win the tournament.")
     clear_screen
   end
 
   # rubocop:enable Layout/LineLength
 
   def display_tournament_status
-    if human.score.max_score?
+    if human.score.max?
       display_human_won_tournament
-    elsif computer.score.max_score?
+    elsif computer.score.max?
       display_computer_won_tournament
     elsif display_tournament_status?
       display_no_tournament_winner
@@ -441,8 +455,7 @@ class RPSGame
     end
 
     clear_screen
-    return true if answer.downcase == 'y'
-    false
+    answer.downcase == 'y'
   end
 
   def display_past_moves_both_players
@@ -464,22 +477,7 @@ class RPSGame
     end
 
     clear_screen
-
-    return true if answer.downcase == 'y'
-    false
-  end
-
-  def play
-    display_welcome_message
-    loop do
-      player_choices
-      display_moves
-      update_score
-      display_game_status
-      break if tournament_winner? || (play_again? == false)
-      display_past_moves_both_players
-    end
-    display_goodbye_message
+    answer.downcase == 'y'
   end
 end
 
