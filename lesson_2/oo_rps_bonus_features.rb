@@ -65,98 +65,61 @@ class Score
   end
 end
 
-class Rock
-  include Pausable
+# Because of the circular logic that occurs when I attempt to invoke a new
+# instance of a subclass in its superclass (if the subclasses occur earlier in
+# the code, they do not recognize the superclass; if the superclass occurs
+# earlier it the code, it does not recognize the subclasses), I opted not to
+# make each move a subclass of Move.  However I do agree that they seem to be
+# objects of a similar type and making them sub-classes of the same superclass
+# makes sense and might be useful were this game to be built out more. For now
+# it is a bit silly, since the only inhereted attribute is the attr_reader, but
+# groiping like this does add logical consistency that I like.  I did implement
+# the wins_against hash and corresponding method changes in the Move class,
+# which does DRY up the code.
 
-  def win?(other)
-    true if other.instance_of?(Scissors) || other.instance_of?(Lizard)
-  end
+class MoveTypes
+  attr_reader :wins_against
+end
 
-  def display_win(other)
-    pause
-    if other.instance_of?(Scissors)
-      puts "Rock smashes scissors!"
-    elsif other.instance_of?(Lizard)
-      puts "Rock crushes lizard!"
-    end
-    pause
+class Rock < MoveTypes
+  def initialize
+    super
+    @wins_against = { 'scissors' => 'smashes', 'lizard' => 'crushes' }
   end
 end
 
-class Paper
-  include Pausable
-
-  def win?(other)
-    true if other.instance_of?(Rock) || other.instance_of?(Spock)
-  end
-
-  def display_win(other)
-    pause
-    if other.instance_of?(Rock)
-      puts "Paper covers rock!"
-    elsif other.instance_of?(Spock)
-      puts "Paper disproves Spock!"
-    end
-    pause
+class Paper < MoveTypes
+  def initialize
+    super
+    @wins_against = { 'rock' => 'covers', 'Spock' => 'disproves' }
   end
 end
 
-class Scissors
-  include Pausable
-
-  def win?(other)
-    true if other.instance_of?(Paper) || other.instance_of?(Lizard)
-  end
-
-  def display_win(other)
-    pause
-    if other.instance_of?(Paper)
-      puts "Scissors cut paper!"
-    elsif other.instance_of?(Lizard)
-      puts "Scissors decapitate lizard!"
-    end
-    pause
+class Scissors < MoveTypes
+  def initialize
+    super
+    @wins_against = { 'paper' => 'cut', 'lizard' => 'decapitate' }
   end
 end
 
-class Lizard
-  include Pausable
-
-  def win?(other)
-    true if other.instance_of?(Paper) || other.instance_of?(Spock)
-  end
-
-  def display_win(other)
-    pause
-    if other.instance_of?(Paper)
-      puts "Lizard eats paper!"
-    elsif other.instance_of?(Spock)
-      puts "Lizard poisons Spock!"
-    end
-    pause
+class Lizard < MoveTypes
+  def initialize
+    super
+    @wins_against = { 'paper' => 'eats', 'Spock' => 'poisons' }
   end
 end
 
-class Spock
-  include Pausable
-
-  def win?(other)
-    true if other.instance_of?(Rock) || other.instance_of?(Scissors)
-  end
-
-  def display_win(other)
-    pause
-    if other.instance_of?(Rock)
-      puts "Spock vaporizes rock!"
-    elsif other.instance_of?(Scissors)
-      puts "Spock smashes scissors!"
-    end
-    pause
+class Spock < MoveTypes
+  def initialize
+    super
+    @wins_against = { 'scissors' => 'smashes', 'rock' => 'vaporizes' }
   end
 end
 
 class Move
-  attr_reader :value, :type
+  include Pausable
+
+  attr_reader :value, :type, :wins_against
 
   VALUES = %w(rock paper scissors lizard spock)
   TYPES = { 'rock' => Rock.new, 'paper' => Paper.new,
@@ -177,12 +140,26 @@ class Move
     @type = TYPES[value]
   end
 
-  def >(other)
-    type.win?(other.type)
-  end
+  # rubocop:disable Layout/LineLength
+
+  # These outputs don't occupy too much space on the screen when actually
+  # printed, and given that they are string outputs, rather than complicated
+  # lines of code, I feel it is ok to disable this cop.
+  # I would use a yaml file instead, but I don't know how to do interpollation
+  # with a yaml file.
 
   def display_victory(other)
-    type.display_win(other.type)
+    pause
+    if type.wins_against.include?(other.value)
+      puts "#{value.capitalize} #{type.wins_against[other.value]} #{other.value}!"
+    end
+    pause
+  end
+
+  # rubocop:enable Layout/LineLength
+
+  def >(other)
+    type.wins_against.include?(other.value)
   end
 
   def to_s
