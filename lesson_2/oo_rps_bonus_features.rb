@@ -275,7 +275,7 @@ class RPSGame
   include Clearable
   include CharacterSelectable
 
-  attr_reader :human, :computer
+  attr_reader :human, :computer, :round_winner, :round_loser
 
   def play
     display_welcome_message
@@ -327,28 +327,26 @@ class RPSGame
     clear_screen
   end
 
-  # rubocop:disable Metrics/MethodLength
-
-  # This method is only one line over the maximimum; I believe it is clear and
-  # have not been able to refactor it to shorten it successfully and still get
-  # my desired output.
-
-  def display_round_winner
-    human_move = human.move
-    computer_move = computer.move
-
-    if human_move > computer_move
-      human_move.display_victory(computer_move)
-      puts_enter("#{human.name} won this round!")
-    elsif computer_move > human_move
-      computer_move.display_victory(human_move)
-      puts_enter("#{computer.name} won this round!")
+  def determine_round_winner
+    if human.move > computer.move
+      @round_winner = human
+      @round_loser = computer
+    elsif computer.move > human.move
+      @round_winner = computer
+      @round_loser = human
     else
-      puts_enter(MESSAGES['tie_game'])
+      @round_winner = 'tie'
     end
   end
 
-  # rubocop:enable Metrics/MethodLength
+  def display_round_winner
+    if round_winner == 'tie'
+      puts_enter(MESSAGES['tie_game'])
+    else
+      @round_winner.move.display_victory(@round_loser.move)
+      puts_enter("#{@round_winner.name} won this round!")
+    end
+  end
 
   def update_score
     if human.move > computer.move
@@ -414,6 +412,7 @@ class RPSGame
   end
 
   def display_game_status
+    determine_round_winner
     display_round_winner
     clear_screen
     puts_pause("#{human.name} has #{human.score}.")
