@@ -14,4 +14,4 @@ no_tournament_winner: No one has enough points to win the tournament.
 view_past_moves: Would you like to view all past moves? (y/n)
 play_again: Would you like to play again? (y/n)
 invalid_answer: Sorry, invalid answer! Type 'y' for 'yes' or 'n' for 'no'.
-goodbye: Thanks for playing Rock, Paper, Scissors! Goodbye!
+goodbye: Thanks for playing Rock, Paper, Scissors, Lizard, Spock! Goodbye!
