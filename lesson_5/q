@@ -1,0 +1,15 @@
+
+[1mFrom:[0m /mnt/c/Users/c_chi/launch_school/rb120/lesson_5/oo_tic_tac_toe.rb:89 Object#human_moves:
+
+    [1;34m82[0m: [32mdef[0m [1;34mhuman_moves[0m
+    [1;34m83[0m:   loop [32mdo[0m
+    [1;34m84[0m:     puts [31m[1;31m"[0m[31mChoose a sqare beween 1 and 9:[1;31m"[0m[31m[0m
+    [1;34m85[0m:     square = gets.chomp.to_i
+    [1;34m86[0m:     [32mbreak[0m [32mif[0m([1;34m1[0m..[1;34m9[0m).include?(square)
+    [1;34m87[0m:     puts [31m[1;31m"[0m[31mSorry, that's not a valid choice.[1;31m"[0m[31m[0m
+    [1;34m88[0m:   [32mend[0m
+ => [1;34m89[0m:   binding.pry
+    [1;34m90[0m: 
+    [1;34m91[0m:   board.set_square_at(square, human.marker)
+    [1;34m92[0m: [32mend[0m
+
