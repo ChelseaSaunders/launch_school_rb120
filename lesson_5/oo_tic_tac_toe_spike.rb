@@ -10,6 +10,8 @@ class Board
     reset
   end
 
+  # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+
   def draw
     puts "     |     |"
     puts " #{@squares[1]}   |  #{@squares[2]}  |  #{@squares[3]}"
@@ -24,12 +26,14 @@ class Board
     puts "     |     |"
   end
 
+  # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+
   def []=(num, marker)
     @squares[num].marker = marker
   end
 
   def unmarked_keys
-    @squares.keys.select {|key| @squares[key].unmarked? }
+    @squares.keys.select { |key| @squares[key].unmarked? }
   end
 
   def full?
@@ -49,9 +53,8 @@ class Board
       first_in_line = @squares[line[0]]
       all_markers_in_line = @squares.values_at(*line)
 
-      if first_in_line.unmarked?
-        next
-      elsif count_player_marker(all_markers_in_line, first_in_line.marker) == 3
+      next if first_in_line.unmarked?
+      if count_player_marker(all_markers_in_line, first_in_line.marker) == 3
         return first_in_line.marker
       end
     end
@@ -107,22 +110,7 @@ class TTTGame
   def play
     clear
     display_welcome_message
-
-    loop do
-      display_board
-
-      loop do
-        current_player_moves
-        break if board.someone_won? || board.full?
-        clear_screen_and_display_board if human_turn?
-      end
-
-      display_result
-      break unless play_again?
-      reset
-      display_play_again_message
-    end
-
+    main_game
     display_goodbye_message
   end
 
@@ -184,6 +172,14 @@ class TTTGame
     end
   end
 
+  def player_move
+    loop do
+      current_player_moves
+      break if board.someone_won? || board.full?
+      clear_screen_and_display_board if human_turn?
+    end
+  end
+
   def display_result
     display_board
     case board.winning_marker
@@ -218,6 +214,17 @@ class TTTGame
   def display_play_again_message
     puts "Let's play again!"
     puts ''
+  end
+
+  def main_game
+    loop do
+      display_board
+      player_move
+      display_result
+      break unless play_again?
+      reset
+      display_play_again_message
+    end
   end
 end
 
