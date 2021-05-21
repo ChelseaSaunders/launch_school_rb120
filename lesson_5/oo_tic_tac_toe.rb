@@ -7,6 +7,7 @@ class Board
 
   def initialize
     @squares = {}
+    @imminent_win_line
     reset
   end
 
@@ -52,7 +53,9 @@ class Board
     WINNING_LINES.each do |line|
       first_in_line = @squares[line[0]]
       all_markers_in_line = @squares.values_at(*line)
+
       next if first_in_line.unmarked?
+
       if count_player_marker(all_markers_in_line, first_in_line.marker) == 3
         return first_in_line.marker
       end
@@ -61,20 +64,41 @@ class Board
     nil
   end
 
-  def imminent_win?(player_marker)
-    empty_square = nil
+  def find_imminent_win_square(player_marker)
+    imminent_square = nil
+
     WINNING_LINES.each do |line|
       line_markers = @squares.values_at(*line)
       player_squares = count_player_marker(line_markers, player_marker)
-     # empty_squares = count_player_marker(line_markers, Square::INITIAL_MARKER)
+      empty_squares = count_player_marker(line_markers, Square::INITIAL_MARKER)
+      if player_squares == 2 && empty_squares == 1
 
-      line.each { |key| empty_square = key if @square[key].empty? }
-
-      return empty_square if player_squares == 2 && empty_square
+        imminent_square = line.select { |k| @squares[k].marker == Square::INITIAL_MARKER }.first
+        break
+      end
+      #break if imminent_square != nil
     end
 
-    false
+    return false if imminent_square == nil
+   # p "imminent square is #{imminent_square}"
+    imminent_square
   end
+
+  def imminent_win?(player_marker)
+   # p "the return of find_imminent_win_square is #{find_imminent_win_square(player_marker)}"
+    return false if find_imminent_win_square(player_marker) == false
+    true
+  end
+
+  # def imminent_win_offense(player_marker)
+  #   p find_imminent_win_square(player_marker)
+  #   @squares[find_imminent_win_square(player_marker)]= player_marker
+  # end
+
+  # def imminent_win_defense(player_marker, opponent_marker)
+  #   p find_imminent_win_square(opponent_marker)
+  #   @squares[find_imminent_win_square(opponent_marker)]= player_marker
+  # end
 
   def reset
     (1..9).each { |key| @squares[key] = Square.new }
@@ -211,18 +235,15 @@ class TTTGame
     board[square] = human.marker
   end
 
-  def computer_offensive_play
-    board[imminent_win?] = computer.marker
-  end
-
-
-
-
   def computer_moves
-    if board.imminent_win?(computer)
-      computer_offensive_play
-    elsif board.imminent_win?(human)
-      computer_defensive_play
+    if board.imminent_win?(computer.marker)
+      imminent_square = board.find_imminent_win_square(computer.marker)
+      board[imminent_square] = computer.marker
+    elsif board.imminent_win?(human.marker)
+      imminent_square = board.find_imminent_win_square(human.marker)
+      board[imminent_square] = computer.marker
+    elsif board.unmarked_keys.include?(5)
+      board[5] = computer.marker
     else
       board[board.unmarked_keys.sample] = computer.marker
     end
