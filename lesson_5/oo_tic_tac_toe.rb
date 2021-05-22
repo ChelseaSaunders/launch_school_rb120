@@ -63,26 +63,29 @@ class Board
     nil
   end
 
+  def find_last_empty_square_in_line(line)
+    line.select { |k| @squares[k].marker == Square::INITIAL_MARKER }.first
+  end
+
   def find_imminent_win_square(player_marker)
     imminent_square = nil
 
     WINNING_LINES.each do |line|
       line_markers = @squares.values_at(*line)
+
       player_squares = count_player_marker(line_markers, player_marker)
       empty_squares = count_player_marker(line_markers, Square::INITIAL_MARKER)
-      if player_squares == 2 && empty_squares == 1
 
-        imminent_square = line.select { |k| @squares[k].marker == Square::INITIAL_MARKER }.first
-        break
+      if player_squares == 2 && empty_squares == 1
+        imminent_square = find_last_empty_square_in_line(line)
       end
     end
 
-    return false if imminent_square.nil?
     imminent_square
   end
 
   def imminent_win?(player_marker)
-    return false if find_imminent_win_square(player_marker) == false
+    return false if find_imminent_win_square(player_marker).nil?
     true
   end
 
@@ -219,11 +222,9 @@ class TTTGame
 
   def computer_moves
     if board.imminent_win?(computer.marker)
-      imminent_square = board.find_imminent_win_square(computer.marker)
-      board[imminent_square] = computer.marker
+      board[board.find_imminent_win_square(computer.marker)] = computer.marker
     elsif board.imminent_win?(human.marker)
-      imminent_square = board.find_imminent_win_square(human.marker)
-      board[imminent_square] = computer.marker
+      board[board.find_imminent_win_square(human.marker)] = computer.marker
     elsif board.unmarked_keys.include?(5)
       board[5] = computer.marker
     else
@@ -277,7 +278,6 @@ class TTTGame
       puts "The board is full.  It's a tie!  In a tie, no one gains points."
     end
 
-    puts ''
     display_score
   end
 
