@@ -7,7 +7,6 @@ class Board
 
   def initialize
     @squares = {}
-    @imminent_win_line
     reset
   end
 
@@ -76,29 +75,16 @@ class Board
         imminent_square = line.select { |k| @squares[k].marker == Square::INITIAL_MARKER }.first
         break
       end
-      #break if imminent_square != nil
     end
 
-    return false if imminent_square == nil
-   # p "imminent square is #{imminent_square}"
+    return false if imminent_square.nil?
     imminent_square
   end
 
   def imminent_win?(player_marker)
-   # p "the return of find_imminent_win_square is #{find_imminent_win_square(player_marker)}"
     return false if find_imminent_win_square(player_marker) == false
     true
   end
-
-  # def imminent_win_offense(player_marker)
-  #   p find_imminent_win_square(player_marker)
-  #   @squares[find_imminent_win_square(player_marker)]= player_marker
-  # end
-
-  # def imminent_win_defense(player_marker, opponent_marker)
-  #   p find_imminent_win_square(opponent_marker)
-  #   @squares[find_imminent_win_square(opponent_marker)]= player_marker
-  # end
 
   def reset
     (1..9).each { |key| @squares[key] = Square.new }
@@ -156,10 +142,6 @@ class Player
   end
 end
 
-class Computer < Player
-
-end
-
 class TTTGame
   HUMAN_MARKER = 'X'
   COMPUTER_MARKER = 'O'
@@ -176,7 +158,7 @@ class TTTGame
   end
 
   def play
-    #clear
+    # clear
     display_welcome_message
     main_game
     display_goodbye_message
@@ -205,7 +187,7 @@ class TTTGame
   end
 
   def clear_screen_and_display_board
-    #clear
+    # clear
     display_board
   end
 
@@ -218,7 +200,7 @@ class TTTGame
       unmarked_keys.join(" #{conjunction} ")
     else
       unmarked_keys.last.prepend("#{conjunction} ")
-      unmarked_keys.join("#{punctuation}")
+      unmarked_keys.join(punctuation)
     end
   end
 
@@ -228,7 +210,7 @@ class TTTGame
       puts "Choose an available square (#{join_or(board.unmarked_keys)}):"
       square = gets.chomp.to_i
       break if board.unmarked_keys.include?(square)
-      #clear
+      # clear
       puts "Sorry, that's not a valid choice."
     end
 
@@ -307,8 +289,8 @@ class TTTGame
     human_score = human.score
     computer_score = computer.score
     puts "No one has enough points to win the tournament."
-    puts "You need #{human.score.points_needed} to win the tournament."
-    puts "Computer needs #{computer.score.points_needed} to win the tournament."
+    puts "You need #{human_score.points_needed} to win the tournament."
+    puts "Computer needs #{computer_score.points_needed} to win the tournament."
   end
 
   def display_human_won_tournament
@@ -355,7 +337,7 @@ class TTTGame
   def reset
     board.reset
     @current_marker = FIRST_TO_MOVE
-    #clear
+    # clear
   end
 
   def display_play_again_message
