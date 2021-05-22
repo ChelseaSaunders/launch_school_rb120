@@ -5,6 +5,8 @@ class Board
                   [[1, 4, 7], [2, 5, 8], [3, 6, 9]] +
                   [[1, 5, 9], [3, 5, 7]]
 
+  CENTER_SQUARE = 5
+
   def initialize
     @squares = {}
     reset
@@ -220,15 +222,39 @@ class TTTGame
     board[square] = human.marker
   end
 
-  def computer_moves
-    if board.imminent_win?(computer.marker)
-      board[board.find_imminent_win_square(computer.marker)] = computer.marker
-    elsif board.imminent_win?(human.marker)
-      board[board.find_imminent_win_square(human.marker)] = computer.marker
-    elsif board.unmarked_keys.include?(5)
-      board[5] = computer.marker
+  def computer_offense_or_defense?(computer_marker, human_marker)
+    board.imminent_win?(computer_marker) || board.imminent_win?(human_marker)
+  end
+
+  def computer_offense_or_defense(computer_marker, human_marker)
+    if board.imminent_win?(computer_marker)
+      board[board.find_imminent_win_square(computer_marker)] = computer_marker
+    elsif board.imminent_win?(human_marker)
+      board[board.find_imminent_win_square(human_marker)] = computer_marker
     else
-      board[board.unmarked_keys.sample] = computer.marker
+      false
+    end
+  end
+
+  def center_square_unmarked?
+    board.unmarked_keys.include?(Board::CENTER_SQUARE)
+  end
+
+  def computer_mark_center_square(computer_marker)
+    board[Board::CENTER_SQUARE] = computer_marker
+  end
+
+  def computer_mark_random_square(computer_marker)
+    board[board.unmarked_keys.sample] = computer_marker
+  end
+
+  def computer_moves
+    if computer_offense_or_defense?(computer.marker, human.marker)
+      computer_offense_or_defense(computer.marker, human.marker)
+    elsif center_square_unmarked?
+      computer_mark_center_square(computer.marker)
+    else
+      computer_mark_random_square(computer.marker)
     end
   end
 
