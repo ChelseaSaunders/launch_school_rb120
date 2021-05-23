@@ -4,8 +4,9 @@ class Board
   WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] +
                   [[1, 4, 7], [2, 5, 8], [3, 6, 9]] +
                   [[1, 5, 9], [3, 5, 7]]
-
   CENTER_SQUARE = 5
+  IMMINENT_WIN = 2
+  WIN = 3
 
   def initialize
     @squares = {}
@@ -57,7 +58,7 @@ class Board
 
       next if first_in_line.unmarked?
 
-      if count_player_marker(all_markers_in_line, first_in_line.marker) == 3
+      if count_player_marker(all_markers_in_line, first_in_line.marker) == WIN
         return first_in_line.marker
       end
     end
@@ -78,7 +79,7 @@ class Board
       player_squares = count_player_marker(line_markers, player_marker)
       empty_squares = count_player_marker(line_markers, Square::INITIAL_MARKER)
 
-      if player_squares == 2 && empty_squares == 1
+      if player_squares == IMMINENT_WIN && empty_squares == 1
         imminent_square = find_last_empty_square_in_line(line)
       end
     end
@@ -151,7 +152,7 @@ class TTTGame
   HUMAN_MARKER = 'X'
   COMPUTER_MARKER = 'O'
   FIRST_TO_MOVE = HUMAN_MARKER
-  MAX_POINTS = 5
+  MAX_POINTS = 2
 
   attr_accessor :board, :human, :computer
 
@@ -320,21 +321,21 @@ class TTTGame
   end
 
   def display_human_won_tournament
-    puts "Congratulations #{human.name}!"
+    puts "Congratulations _human_!"
     puts "You won #{MAX_POINTS} matches!"
     puts "You won the tournament!"
   end
 
   def display_computer_won_tournament
-    puts "Sorry, #{human.name}."
+    puts "Sorry, _human_."
     puts "Computer was the first to win #{MAX_POINTS} matches."
     puts "Computer won the tournament!  Better luck next time!"
   end
 
   def display_tournament_status
-    if human.score == MAX_POINTS
+    if human.score.points == MAX_POINTS
       display_human_won_tournament
-    elsif computer.score == MAX_POINTS
+    elsif computer.score.points == MAX_POINTS
       display_computer_won_tournament
     else
       display_no_tournament_winner
