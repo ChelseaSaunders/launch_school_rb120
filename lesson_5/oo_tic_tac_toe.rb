@@ -1,4 +1,5 @@
-require 'pry'
+require 'yaml'
+MESSAGES = YAML.load_file('oo_tic_tac_toe.yml')
 
 class Board
   WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] +
@@ -140,32 +141,97 @@ class Score
 end
 
 class Player
-  attr_reader :marker, :score
+  attr_reader :marker, :score, :name
 
-  def initialize(marker)
-    @marker = marker
+  MARKER = @marker
+
+  def initialize
+    @name = choose_name
     @score = Score.new
   end
 end
 
-class TTTGame
-  HUMAN_MARKER = 'X'
-  COMPUTER_MARKER = 'O'
-  FIRST_TO_MOVE = HUMAN_MARKER
-  MAX_POINTS = 2
+class Computer < Player
+  COMPUTER_NAMES = %w(HAL Internet_Machine TechnoBot Ron_Swanson Mr_Robot)
+  POSSIBLE_MARKERS = ('0'..'z').to_a
 
-  attr_accessor :board, :human, :computer
+  def choose_name
+    COMPUTER_NAMES.sample
+  end
+
+  def choose_marker(other_marker)
+    @marker = nil
+    loop do
+      @marker = POSSIBLE_MARKERS.sample
+      break unless marker.downcase == other_marker.downcase
+    end
+
+    marker
+  end
+end
+
+class Human < Player
+  def initialize
+    super
+    choose_marker
+  end
+
+  def choose_name
+    name = ''
+    loop do
+      puts MESSAGES['enter_name']
+      name = gets.chomp
+      break unless name.empty?
+      puts MESSAGES['no_name_error']
+    end
+
+    name
+  end
+
+  def choose_marker
+    @marker = ''
+
+    loop do
+      puts MESSAGES['choose_marker']
+      @marker = gets.chomp
+      break unless marker.empty? || marker.length > 1
+      puts MESSAGES['invalid_marker']
+    end
+
+    marker
+  end
+
+  def first_to_move(other_marker)
+    first_player = nil
+    loop do
+      puts MESSAGES['choose_first_player']
+      first_player = gets.chomp
+      break if first_player == "1" || first_player == "2"
+      puts MESSAGES['invalid_choice']
+    end
+
+    first_player == "1" ? marker : other_marker
+  end
+end
+
+class TTTGame
+  attr_accessor :board, :human, :computer, :first_to_move
 
   def initialize
     @board = Board.new
-    @human = Player.new(HUMAN_MARKER)
-    @computer = Player.new(COMPUTER_MARKER)
-    @current_marker = FIRST_TO_MOVE
+    @human = Human.new
+    @computer = Computer.new
+    computer.choose_marker(human.marker)
+    @first_to_move = human.first_to_move(computer.marker)
+    @current_marker = first_to_move
   end
+
+  MAX_POINTS = 5
 
   def play
     # clear
     display_welcome_message
+    display_rules
     main_game
     display_goodbye_message
   end
@@ -177,16 +243,26 @@ class TTTGame
   end
 
   def display_welcome_message
-    puts "Welcome to Tic-Tac-Toe!"
+    puts MESSAGES['welcome']
     puts ""
+    puts "You will be playing against #{computer.name}!"
+    puts "#{computer.name}'s marker is #{computer.marker}."
+  end
+
+  def display_rules
+    puts "Whoever gets #{Board::WIN} squares in a row first wins the match!"
+    puts "Whoever wins #{MAX_POINTS} games first wins the tournament!"
+    puts ""
+    puts MESSAGES['how_to_leave_tournament']
+    puts MESSAGES['good_luck']
   end
 
   def display_goodbye_message
-    puts "Thanks for playing Tic-Tac-Toe!  Goodbye!"
+    puts MESSAGES['goodbye']
   end
 
   def display_board
-    puts "You are #{human.marker}.  Computer is #{computer.marker}"
+    puts "You are #{human.marker}.  #{computer.name} is #{computer.marker}"
     puts ""
     board.draw
     puts ""
@@ -217,7 +293,7 @@ class TTTGame
       square = gets.chomp.to_i
       break if board.unmarked_keys.include?(square)
       # clear
-      puts "Sorry, that's not a valid choice."
+      puts MESSAGES['invalid_choice']
     end
 
     board[square] = human.marker
@@ -260,16 +336,16 @@ class TTTGame
   end
 
   def human_turn?
-    @current_marker == HUMAN_MARKER
+    @current_marker == human.marker
   end
 
   def current_player_moves
     if human_turn?
       human_moves
-      @current_marker = COMPUTER_MARKER
+      @current_marker = computer.marker
     else
       computer_moves
-      @current_marker = HUMAN_MARKER
+      @current_marker = human.marker
     end
   end
 
@@ -291,18 +367,18 @@ class TTTGame
 
   def display_score
     puts "You have #{human.score}."
-    puts "Computer has #{computer.score}."
+    puts "#{computer.name} has #{computer.score}."
   end
 
   def display_match_winner
     display_board
     case board.winning_marker
     when human.marker
-      puts "You won!"
+      puts MESSAGES['player_won_match']
     when computer.marker
-      puts "Computer won!"
+      puts "#{computer.name} won this match!"
     else
-      puts "The board is full.  It's a tie!  In a tie, no one gains points."
+      puts MESSAGES['tie']
     end
 
     display_score
@@ -312,13 +388,17 @@ class TTTGame
     human.score == MAX_POINTS || computer.score == MAX_POINTS
   end
 
+  # rubocop:disable Layout/LineLength
+
   def display_no_tournament_winner
     human_score = human.score
     computer_score = computer.score
-    puts "No one has enough points to win the tournament."
+    puts MESSAGES['no_tournament_winner']
     puts "You need #{human_score.points_needed} to win the tournament."
-    puts "Computer needs #{computer_score.points_needed} to win the tournament."
+    puts "#{computer.name} needs #{computer_score.points_needed} to win the tournament."
   end
+
+  # rubocop:enable Layout/LineLength
 
   def display_human_won_tournament
     puts "Congratulations _human_!"
@@ -327,9 +407,9 @@ class TTTGame
   end
 
   def display_computer_won_tournament
-    puts "Sorry, _human_."
-    puts "Computer was the first to win #{MAX_POINTS} matches."
-    puts "Computer won the tournament!  Better luck next time!"
+    puts "Sorry, #{human.name}."
+    puts "#{computer.name} was the first to win #{MAX_POINTS} matches."
+    puts "#{computer.name} won the tournament!  Better luck next time!"
   end
 
   def display_tournament_status
@@ -345,17 +425,16 @@ class TTTGame
   def report_score
     update_score
     display_match_winner
-    display_tournament_status
   end
 
   def play_again?
     answer = nil
 
     loop do
-      puts "Would you like to play again?"
+      puts MESSAGES['play_again?']
       answer = gets.chomp.downcase
       break if %w(y n yes no).include?(answer)
-      puts "Sorry,please choose yes(y) or no(n)."
+      puts MESSAGES['invalid_choice']
     end
 
     answer == 'y' || answer == 'yes'
@@ -363,12 +442,12 @@ class TTTGame
 
   def reset
     board.reset
-    @current_marker = FIRST_TO_MOVE
+    @current_marker = first_to_move
     # clear
   end
 
   def display_play_again_message
-    puts "Let's play again!"
+    puts MESSAGES['play_again']
     puts ''
   end
 
@@ -377,6 +456,8 @@ class TTTGame
       display_board
       player_move
       report_score
+      display_tournament_status
+      break if tournament_winner?
       break unless play_again?
       reset
       display_play_again_message

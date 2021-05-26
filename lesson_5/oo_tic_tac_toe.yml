@@ -1,0 +1,15 @@
+enter_name: Please enter your name.
+no_name_error: Sorry, you must enter a value.
+choose_marker: Please choose your marker.  You may pick any number, letter, or symbol!
+invalid_marker: Sorry, your marker must be exactly one character in length.
+choose_first_player: Who would you like to go first? Type 1 for yourself or 2 for your opponant.
+invalid_choice: Sorry, that's not a valid choice.
+welcome: Welcome to Tic Tac Toe!
+how_to_leave_tournament: If you do not wish to play through the whole tournament, you may quit at the end of any match.
+good_luck: Good luck!
+player_won_match: You won this match!
+tie: The board is full, but no one got 3 in a row.  It's a tie!  In a tie, no one gains points.
+no_tournament_winner: No one has enough points to win the tournament.
+play_again?: Would you like to play again? Please choose yes(y) or no(n).
+play_again: Let's play again!
+goodbye: Thanks for playing Tic-Tac-Toe!  Goodbye!
