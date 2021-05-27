@@ -4,6 +4,8 @@ choose_marker: Please choose your marker.  You may pick any number, letter, or s
 invalid_marker: Sorry, your marker must be exactly one character in length.
 choose_first_player: Who would you like to go first? Type 1 for yourself or 2 for your opponant.
 invalid_choice: Sorry, that's not a valid choice.
+navigation_rules: Once you are done reading a screen (including this one), press 'Enter' to proceed.
+press_enter: (press 'enter' to continue)
 welcome: Welcome to Tic Tac Toe!
 how_to_leave_tournament: If you do not wish to play through the whole tournament, you may quit at the end of any match.
 good_luck: Good luck!
