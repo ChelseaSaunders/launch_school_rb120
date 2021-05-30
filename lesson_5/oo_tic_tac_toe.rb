@@ -171,14 +171,16 @@ end
 
 class Player
   include Pausable
-  attr_reader :marker, :score, :name
+  attr_reader :marker, :score, :name, :other_player
 
   MARKER = @marker
 
-  def initialize
+  def initialize(other_player = nil)
+    @other_player = other_player
     clear
     @name = choose_name
     clear
+    @marker = choose_marker
     @score = Score.new
   end
 end
@@ -188,14 +190,20 @@ class Computer < Player
   POSSIBLE_MARKERS = ('0'..'z').to_a
 
   def choose_name
-    COMPUTER_NAMES.sample
+    @name = nil
+    loop do
+      @name = COMPUTER_NAMES.sample
+      break unless name.downcase == other_player.name.downcase
+    end
+
+    name
   end
 
-  def choose_marker(other_marker)
+  def choose_marker
     @marker = nil
     loop do
       @marker = POSSIBLE_MARKERS.sample
-      break unless marker.downcase == other_marker.downcase
+      break unless marker.downcase == other_player.marker.downcase
     end
 
     marker
@@ -203,14 +211,8 @@ class Computer < Player
 end
 
 class Human < Player
-  def initialize
-    super
-    clear
-    choose_marker
-  end
-
   def empty_input(string)
-    string.empty? || string.split('').select { |char| char != ' '} == []
+    string.empty? || string.split('').select { |char| char != ' ' } == []
   end
 
   def choose_name
@@ -259,8 +261,7 @@ class TTTGame
   def initialize
     @board = Board.new
     @human = Human.new
-    @computer = Computer.new
-    computer.choose_marker(human.marker)
+    @computer = Computer.new(human)
     @first_to_move = human.first_to_move(computer.marker)
     @current_marker = first_to_move
   end
