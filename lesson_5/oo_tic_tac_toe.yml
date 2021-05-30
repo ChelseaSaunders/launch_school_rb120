@@ -7,11 +7,21 @@ invalid_choice: Sorry, that's not a valid choice.
 navigation_rules: Once you are done reading a screen (including this one), press 'Enter' to proceed.
 press_enter: (press 'enter' to continue)
 welcome: Welcome to Tic Tac Toe!
+introduce_opponent: You will be playing against %{custom_data}!
+opponent_marker: Their marker is %{custom_data}.
+match_rules: Whoever gets %{custom_data} squares in a row first wins the match!
+tournament_rules: Whoever wins %{custom_data} matches first wins the tournament!
 how_to_leave_tournament: If you do not wish to play through the whole tournament, you may quit at the end of any match.
 good_luck: Good luck!
+choose_square: Choose an available square (%{custom_data})
+human_score: You have %{custom_data}.
 player_won_match: You won this match!
+computer_won_match: Sorry, %{custom_data} won this match!
 tie: The board is full, but no one got 3 in a row.  It's a tie!  In a tie, no one gains points.
+human_points_needed:  You need %{custom_data} to win the tournament.
 no_tournament_winner: No one has enough points to win the tournament.
+sorry_loss: Sorry, %{custom_data}.
+computer_won_tournament: This time %{custom_data} won the tournament!  Better luck next time!
 play_again?: Would you like to play again? Please choose yes(y) or no(n).
 play_again: Let's play again!
 goodbye: Thanks for playing Tic-Tac-Toe!  Goodbye!

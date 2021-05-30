@@ -10,22 +10,23 @@ module Pausable
     sleep(2)
   end
 
-  def puts_pause(string)
-    puts string
+  def prompt(msg_key, custom_data='')
+    message = format(MESSAGES[msg_key], custom_data: custom_data)
+
+    puts(message)
+  end
+
+  def puts_pause(msg_key, custom_data='')
+    prompt(msg_key, custom_data)
     pause
   end
 
-  def press_enter_next_screen(string)
-    puts string
+  def press_enter_next_screen(msg_key, custom_data='')
+    prompt(msg_key, custom_data)
     puts ''
     puts MESSAGES['press_enter']
     $stdin.gets
     clear
-  end
-
-  def puts_enter(string)
-    puts string
-    press_enter_next_screen
   end
 end
 
@@ -208,12 +209,16 @@ class Human < Player
     choose_marker
   end
 
+  def empty_input(string)
+    string.empty? || string.split('').select { |char| char != ' '} == []
+  end
+
   def choose_name
     name = ''
     loop do
       puts MESSAGES['enter_name']
       name = gets.chomp
-      break unless name.empty?
+      break unless empty_input(name)
       puts MESSAGES['no_name_error']
     end
 
@@ -226,7 +231,7 @@ class Human < Player
     loop do
       puts MESSAGES['choose_marker']
       @marker = gets.chomp
-      break unless marker.empty? || marker.length > 1
+      break unless empty_input(marker) || marker.length > 1
       puts MESSAGES['invalid_marker']
     end
 
@@ -278,32 +283,28 @@ class TTTGame
 
   def display_welcome_message
     clear
-    puts_pause(MESSAGES['welcome'])
+    puts_pause('welcome')
     puts ""
-    puts_pause("You will be playing against #{computer.name}!")
-    puts_pause("#{computer.name}'s marker is #{computer.marker}.")
-    press_enter_next_screen(MESSAGES['navigation_rules'])
+    puts_pause('introduce_opponent', computer.name)
+    puts_pause('opponent_marker', computer.marker)
+    press_enter_next_screen('navigation_rules')
   end
-
-  # rubocop:disable Layout/LineLength
 
   def display_rules
-    puts_pause("Whoever gets #{Board::WIN} squares in a row first wins the match!")
-    press_enter_next_screen("Whoever wins #{MAX_POINTS} matches first wins the tournament!")
-    press_enter_next_screen(MESSAGES['how_to_leave_tournament'])
-    puts_pause(MESSAGES['good_luck'])
+    puts_pause('match_rules', Board::WIN)
+    press_enter_next_screen('tournament_rules', MAX_POINTS)
+    press_enter_next_screen('how_to_leave_tournament')
+    puts_pause('good_luck')
   end
-
-  # rubocop:enable Layout/LineLength
 
   def display_goodbye_message
     clear
-    puts_pause(MESSAGES['goodbye'])
+    puts_pause('goodbye')
   end
 
   def display_board
     clear
-    puts "You are #{human.marker}.  #{computer.name} is #{computer.marker}"
+    puts "You are #{human.marker}. #{computer.name} is #{computer.marker}"
     puts ""
     board.draw
     puts ""
@@ -330,7 +331,7 @@ class TTTGame
   def choose_valid_square
     square = nil
     loop do
-      puts "Choose an available square (#{join_or(board.unmarked_keys)}):"
+      prompt('choose_square', join_or(board.unmarked_keys))
       square = gets.chomp
       break if board.unmarked_keys.include?(square.to_i) && square.length == 1
       puts MESSAGES['invalid_choice']
@@ -411,23 +412,20 @@ class TTTGame
   end
 
   def display_score
-    puts "You have #{human.score}."
-    press_enter_next_screen("#{computer.name} has #{computer.score}.")
+    puts "#{computer.name} has #{computer.score}."
+    press_enter_next_screen('human_score', human.score)
   end
 
   def display_human_match_winner
-    clear
-    press_enter_next_screen(MESSAGES['player_won_match'])
+    press_enter_next_screen('player_won_match')
   end
 
   def display_computer_match_winner
-    clear
-    press_enter_next_screen("#{computer.name} won this match!")
+    press_enter_next_screen('computer_won_match', computer.name)
   end
 
   def display_tie_match
-    clear
-    press_enter_next_screen(MESSAGES['tie'])
+    press_enter_next_screen('tie')
   end
 
   def display_match_winner
@@ -448,17 +446,14 @@ class TTTGame
     human.score.points == MAX_POINTS || computer.score.points == MAX_POINTS
   end
 
-  # rubocop:disable Layout/LineLength
-
   def display_no_tournament_winner
     human_score = human.score
     computer_score = computer.score
-    press_enter_next_screen(MESSAGES['no_tournament_winner'])
-    puts "You need #{human_score.points_needed} to win the tournament."
-    press_enter_next_screen("#{computer.name} needs #{computer_score.points_needed} to win the tournament.")
+    press_enter_next_screen('no_tournament_winner')
+    puts "#{computer.name} needs #{computer_score.points_needed} to win the "\
+      "tournament."
+    press_enter_next_screen('human_points_needed', human_score.points_needed)
   end
-
-  # rubocop:enable Layout/LineLength
 
   def display_human_won_tournament
     puts "Congratulations #{human.name}!"
@@ -466,15 +461,11 @@ class TTTGame
     press_enter_next_screen("You won the tournament!")
   end
 
-  # rubocop:disable Layout/LineLength
-
   def display_computer_won_tournament
-    puts "Sorry, #{human.name}."
-    puts_pause("#{computer.name} was the first to win #{MAX_POINTS} matches.")
-    press_enter_next_screen("#{computer.name} won the tournament!  Better luck next time!")
+    prompt('sorry_loss', human.name)
+    puts "#{computer.name} was the first to win #{MAX_POINTS} matches."
+    press_enter_next_screen('computer_won_tournament', computer.name)
   end
-
-  # rubocop:enable Layout/LineLength
 
   def display_tournament_status
     if human.score.points == MAX_POINTS
