@@ -13,5 +13,7 @@ press_enter: (press 'enter' to continue)
 invalid_choice: Sorry, that's not a valid choice.
 hand_points_player: You have %{data1} for a total of %{data2} points.
 hand_points_dealer: The dealer, %{data1} has %{data2} for a total of %{data3} points.
+hit_or_stay?: Would you like to hit (h) or stay (s)?
 new_card: The card added to %{data1}'s hand is a %{data2} worth %{data3} points.
 play_again?: Would you like to play again? Please choose yes(y) or no(n).
+goodbye: Thank you for playing 21! Goodbye!

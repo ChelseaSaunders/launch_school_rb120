@@ -24,7 +24,7 @@ module Pausable
   def press_enter_next_screen(msg_key, data1='', data2='', data3='')
     prompt(msg_key, data1, data2, data3)
     puts ''
-    puts MESSAGES['press_enter']
+    prompt('press_enter')
     $stdin.gets
     clear
   end
@@ -112,10 +112,10 @@ class Player < Participant
   def choose_name
     name = ''
     loop do
-      puts MESSAGES['enter_name']
+      prompt('enter_name')
       name = gets.chomp
       break unless empty_input(name)
-      puts MESSAGES['no_name_error']
+      prompt('no_name_error')
     end
 
     name
@@ -231,10 +231,10 @@ class Game
     answer = nil
 
     loop do
-      puts MESSAGES['display_rules?']
+      prompt('display_rules?')
       answer = gets.chomp.downcase
       break if %w(y n yes no).include?(answer)
-      puts MESSAGES['invalid_choice']
+      prompt('invalid_choice')
     end
 
     answer == 'y' || answer == 'yes'
@@ -276,10 +276,10 @@ class Game
   def player_hit_or_stay
     answer = nil
     loop do
-      puts "Would you like to hit (h) or stay (s)?"
+      prompt('hit_or_stay?')
       answer = gets.chomp.downcase
       break if %w(h s stay hit).include?(answer)
-      puts MESSAGES['invalid_choice']
+      prompt('invalid_choice')
     end
 
     "stay" if answer == "s" || answer == "stay"
@@ -302,10 +302,10 @@ class Game
     answer = nil
 
     loop do
-      puts MESSAGES['play_again?']
+      prompt('play_again?')
       answer = gets.chomp.downcase
       break if %w(y n yes no).include?(answer)
-      puts MESSAGES['invalid_choice']
+      prompt('invalid_choice')
     end
 
     answer == 'y' || answer == 'yes'
@@ -317,7 +317,8 @@ class Game
   end
 
   def display_goodbye_message
-    puts "Thanks for playing 21!  Goodbye!"
+    puts_pause('goodbye')
+    clear
   end
 end
 
