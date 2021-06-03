@@ -1,11 +1,43 @@
 require 'yaml'
 MESSAGES = YAML.load_file('oo_21.yml')
 
+module Pausable
+  def clear
+    system 'clear'
+  end
+
+  def pause
+    sleep(2)
+  end
+
+  def prompt(msg_key, data1='', data2='', data3='')
+    msg = format(MESSAGES[msg_key], data1: data1, data2: data2, data3: data3)
+
+    puts(msg)
+  end
+
+  def puts_pause(msg_key, data1='', data2='', data3='')
+    prompt(msg_key, data1, data2, data3)
+    pause
+  end
+
+  def press_enter_next_screen(msg_key, data1='', data2='', data3='')
+    prompt(msg_key, data1, data2, data3)
+    puts ''
+    puts MESSAGES['press_enter']
+    $stdin.gets
+    clear
+  end
+end
+
 class Participant
-  attr_accessor :hand, :points, :visible_cards, :name, :visible_points
+  include Pausable
+
+  attr_accessor :name, :hand, :points, :other_player
 
   def initialize(deck, other_player = nil)
-    @name = get_name(other_player)
+    @other_player = other_player
+    @name = choose_name
     @hand = deal(deck)
     @points = calculate_point_total(deck, hand)
   end
@@ -22,7 +54,6 @@ class Participant
     hit_add_card(deck)
     display_new_card(deck)
     update_points(deck, hand)
-    display_hand_and_points
   end
 
   def aces(deck, total, ace_card)
@@ -51,22 +82,25 @@ class Participant
   end
 
   def join_and(arr)
-    string = ''
     case arr.length
     when 1
-      string = arr.join
+      arr.join
     when 2
-      string = arr.first + ' and ' + arr.last
+      "#{arr.first} and #{arr.last}"
     else
       first = arr[0..-2]
-      string = first.join(', ') + ' and ' + arr.last
+      "#{first.join(', ')} and #{arr.last}"
     end
-
-    string
   end
 
   def display_new_card(deck)
-    puts "#{name} was dealt a #{hand.last} worth #{deck.determine_card_value(hand.last)} points."
+    new_card = deck.determine_card_value(hand.last)
+    press_enter_next_screen('new_card', name, hand.last, new_card)
+  end
+
+  def reset(deck)
+    @hand = deal(deck)
+    @points = calculate_point_total(deck, hand)
   end
 end
 
@@ -75,7 +109,7 @@ class Player < Participant
     string.empty? || string.split('').select { |char| char != ' ' } == []
   end
 
-  def get_name(other_player)
+  def choose_name
     name = ''
     loop do
       puts MESSAGES['enter_name']
@@ -87,20 +121,19 @@ class Player < Participant
     name
   end
 
+  def all_cards
+    join_and(hand)
+  end
+
   def display_hand_and_points
-    puts "#{name} has #{join_and(hand)} for a total of #{points} points."
+    puts_pause('hand_points_player', all_cards, points)
   end
 end
 
 class Dealer < Participant
   COMPUTER_NAMES = %w(Dwight_Schrute Ron_Swanson Mr_Robot TechnoBot)
 
-  def initialize(deck, other_player)
-    super(deck, other_player)
-    @visible_points = calculate_visible_points(deck)
-  end
-
-  def get_name(other_player)
+  def choose_name
     @name = nil
     loop do
       @name = COMPUTER_NAMES.sample
@@ -114,12 +147,13 @@ class Dealer < Participant
     "an unknown card and #{join_and(hand[1..-1])}"
   end
 
-  def calculate_visible_points(deck)
+  def visible_points(deck)
     "#{calculate_point_total(deck, hand[1..-1])} visible"
   end
 
-  def display_hand_and_points
-    puts "#{name} has #{visible_cards}} for a total of #{visible_points} points."
+  def display_hand_and_points(deck)
+    puts_pause('hand_points_dealer', name, visible_cards, visible_points(deck))
+    puts ""
   end
 end
 
@@ -164,37 +198,71 @@ class Deck
   end
 end
 
-#=begin
 class Game
+  include Pausable
   BUSTED = 21
 
   attr_accessor :deck, :player, :dealer
 
-    def initialize
-      @deck = Deck.new
-      @player = Player.new(deck)
-      @dealer = Dealer.new(deck, player)
-
+  def initialize
+    @deck = Deck.new
+    @player = Player.new(deck)
+    @dealer = Dealer.new(deck, player)
   end
 
   def start
     display_welcome_message
-    show_participants_cards
-    player_turn
-    dealer_turn
-    show_result
+    main_game
+    display_goodbye_message
   end
 
   private
 
   def display_welcome_message
-    puts "welcome to 21"
-
+    clear
+    puts_pause('welcome_message')
+    puts_pause('intro_message', dealer.name)
+    press_enter_next_screen('navigation_rules')
+    display_rules if display_rules?
+    clear
   end
 
-  def show_participants_cards
+  def display_rules?
+    answer = nil
+
+    loop do
+      puts MESSAGES['display_rules?']
+      answer = gets.chomp.downcase
+      break if %w(y n yes no).include?(answer)
+      puts MESSAGES['invalid_choice']
+    end
+
+    answer == 'y' || answer == 'yes'
+  end
+
+  def display_rules
+    clear
+    puts_pause('rules_1', dealer.name)
+    puts_pause('rules_2')
+    puts_pause('rules_3')
+    puts_pause('rules_4', BUSTED)
+    press_enter_next_screen('rules_5', dealer.name, BUSTED)
+  end
+
+  def main_game
+    loop do
+      player_turn
+      dealer_turn if busted?(player) == false
+      game_results
+      break unless play_again?
+      deck = Deck.new
+      reset(player, dealer, deck)
+    end
+  end
+
+  def display_participants_cards
     player.display_hand_and_points
-    dealer.display_hand_and_points
+    dealer.display_hand_and_points(deck)
   end
 
   def busted?(participant)
@@ -211,15 +279,17 @@ class Game
       puts "Would you like to hit (h) or stay (s)?"
       answer = gets.chomp.downcase
       break if %w(h s stay hit).include?(answer)
-      puts "Sorry, invalid answer."
+      puts MESSAGES['invalid_choice']
     end
 
-    "stay" if answer == "s"|| answer == "stay"
+    "stay" if answer == "s" || answer == "stay"
   end
 
   def player_turn
     loop do
+      display_participants_cards
       break if player_hit_or_stay == 'stay'
+      clear
       player.hit_play(deck)
       if busted?(player)
         display_busted(player)
@@ -227,21 +297,28 @@ class Game
       end
     end
   end
+
+  def play_again?
+    answer = nil
+
+    loop do
+      puts MESSAGES['play_again?']
+      answer = gets.chomp.downcase
+      break if %w(y n yes no).include?(answer)
+      puts MESSAGES['invalid_choice']
+    end
+
+    answer == 'y' || answer == 'yes'
+  end
+
+  def reset(player, dealer, deck)
+    player.reset(deck)
+    dealer.reset(deck)
+  end
+
+  def display_goodbye_message
+    puts "Thanks for playing 21!  Goodbye!"
+  end
 end
 
-def display_dealer_hit_or_stay
-
-
 Game.new.start
-#=end
-
-# deck = Deck.new
-
-# player = Player.new(deck)
-# dealer = Dealer.new(deck, player)
-
-# p player.hand
-# p dealer.hand
-# player.display_hand_and_points
-
-# dealer.display_hand_and_points
