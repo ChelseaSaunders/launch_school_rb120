@@ -46,14 +46,17 @@ class Participant
     deck.current_cards.pop(2)
   end
 
-  def hit_add_card(deck)
+  def add_card(deck)
     hand << deck.current_cards.pop
   end
 
   def hit_play(deck)
-    hit_add_card(deck)
-    display_new_card(deck)
+    clear
+    puts_pause('hit')
+    clear
+    add_card(deck)
     update_points(deck, hand)
+    display_new_card
   end
 
   def aces(deck, total, ace_card)
@@ -93,9 +96,16 @@ class Participant
     end
   end
 
-  def display_new_card(deck)
-    new_card = deck.determine_card_value(hand.last)
-    press_enter_next_screen('new_card', name, hand.last, new_card)
+  def display_new_card
+    press_enter_next_screen('new_card', name, hand.last, points)
+  end
+
+  def all_cards
+    join_and(hand)
+  end
+
+  def display_hand_and_points
+    puts_pause('hand_points', name, all_cards, points)
   end
 
   def reset(deck)
@@ -110,6 +120,7 @@ class Player < Participant
   end
 
   def choose_name
+    clear
     name = ''
     loop do
       prompt('enter_name')
@@ -119,14 +130,6 @@ class Player < Participant
     end
 
     name
-  end
-
-  def all_cards
-    join_and(hand)
-  end
-
-  def display_hand_and_points
-    puts_pause('hand_points_player', all_cards, points)
   end
 end
 
@@ -151,8 +154,8 @@ class Dealer < Participant
     "#{calculate_point_total(deck, hand[1..-1])} visible"
   end
 
-  def display_hand_and_points(deck)
-    puts_pause('hand_points_dealer', name, visible_cards, visible_points(deck))
+  def display_visible_hand_and_points(deck)
+    puts_pause('hand_points_visible', name, visible_cards, visible_points(deck))
     puts ""
   end
 end
@@ -201,6 +204,7 @@ end
 class Game
   include Pausable
   BUSTED = 21
+  DEALER_HIT_MAX = 17
 
   attr_accessor :deck, :player, :dealer
 
@@ -220,8 +224,10 @@ class Game
 
   def display_welcome_message
     clear
-    puts_pause('welcome_message')
+    puts_pause('welcome_message', player.name)
+    puts ''
     puts_pause('intro_message', dealer.name)
+    puts ''
     press_enter_next_screen('navigation_rules')
     display_rules if display_rules?
     clear
@@ -253,28 +259,34 @@ class Game
     loop do
       player_turn
       dealer_turn if busted?(player) == false
-      game_results
+      #game_results
       break unless play_again?
       deck = Deck.new
       reset(player, dealer, deck)
     end
   end
 
-  def display_participants_cards
+  def display_participants_cards_player_turn
     player.display_hand_and_points
-    dealer.display_hand_and_points(deck)
+    dealer.display_visible_hand_and_points(deck)
+  end
+
+  def display_participants_cards_dealer_turn
+    player.display_hand_and_points
+    dealer.display_hand_and_points
+  end
+
+  def display_busted(participant)
+    press_enter_next_screen('busted', participant.name)
   end
 
   def busted?(participant)
     participant.points > BUSTED
   end
 
-  def display_busted(participant)
-    puts "#{participant.name} busted!"
-  end
-
-  def player_hit_or_stay
+  def player_stay?
     answer = nil
+
     loop do
       prompt('hit_or_stay?')
       answer = gets.chomp.downcase
@@ -282,17 +294,60 @@ class Game
       prompt('invalid_choice')
     end
 
-    "stay" if answer == "s" || answer == "stay"
+    display_player_stay if answer == "s" || answer == "stay"
+    answer == "s" || answer == "stay"
+  end
+
+  def display_player_stay
+    clear
+    press_enter_next_screen('player_stay')
+  end
+
+  def display_current_turn(participant)
+    puts_pause('current_turn', participant.name)
+    puts ''
   end
 
   def player_turn
     loop do
-      display_participants_cards
-      break if player_hit_or_stay == 'stay'
-      clear
+      display_current_turn(player)
+      display_participants_cards_player_turn
+      break if player_stay?
       player.hit_play(deck)
       if busted?(player)
         display_busted(player)
+        break
+      end
+    end
+  end
+
+  def dealer_stay?
+    if dealer.points < DEALER_HIT_MAX
+      display_dealer_stay
+      return true
+    end
+
+    false
+  end
+
+  def display_dealer_stay
+    press_enter_next_screen('dealer_stay', dealer.name)
+  end
+
+  def prompt_to_display_dealer_move
+    puts ''
+    press_enter_next_screen('prompt_for_dealer_move', dealer.name)
+  end
+
+  def dealer_turn
+    loop do
+      display_current_turn(dealer)
+      display_participants_cards_dealer_turn
+      prompt_to_display_dealer_move
+      break if dealer_stay?
+      dealer.hit_play(deck)
+      if busted?(dealer)
+        display_busted(dealer)
         break
       end
     end
@@ -312,6 +367,7 @@ class Game
   end
 
   def reset(player, dealer, deck)
+    clear
     player.reset(deck)
     dealer.reset(deck)
   end
