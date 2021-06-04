@@ -10,19 +10,19 @@ module Pausable
     sleep(2)
   end
 
-  def prompt(msg_key, data1='', data2='', data3='')
-    msg = format(MESSAGES[msg_key], data1: data1, data2: data2, data3: data3)
-
+  def prompt(msg_key, data1='', data2='', data3='', data4='')
+    msg = format(MESSAGES[msg_key], data1: data1, data2: data2, data3: data3,
+                 data4: data4)
     puts(msg)
   end
 
-  def puts_pause(msg_key, data1='', data2='', data3='')
-    prompt(msg_key, data1, data2, data3)
+  def puts_pause(msg_key, data1='', data2='', data3='', data4='')
+    prompt(msg_key, data1, data2, data3, data4)
     pause
   end
 
-  def press_enter_next_screen(msg_key, data1='', data2='', data3='')
-    prompt(msg_key, data1, data2, data3)
+  def press_enter_next_screen(msg_key, data1='', data2='', data3='', data4='')
+    prompt(msg_key, data1, data2, data3, data4)
     puts ''
     prompt('press_enter')
     $stdin.gets
@@ -96,6 +96,10 @@ class Participant
     end
   end
 
+  def point_or_points
+    points == 1 ? "point" : "points"
+  end
+
   def display_new_card
     press_enter_next_screen('new_card', name, hand.last, points)
   end
@@ -105,7 +109,7 @@ class Participant
   end
 
   def display_hand_and_points
-    puts_pause('hand_points', name, all_cards, points)
+    puts_pause('hand_points', name, all_cards, points, point_or_points)
   end
 
   def reset(deck)
@@ -131,10 +135,30 @@ class Player < Participant
 
     name
   end
+
+  def stay?
+    answer = nil
+
+    loop do
+      prompt('hit_or_stay?')
+      answer = gets.chomp.downcase
+      break if %w(h s stay hit).include?(answer)
+      prompt('invalid_choice')
+    end
+
+    display_stay if answer == "s" || answer == "stay"
+    answer == "s" || answer == "stay"
+  end
+
+  def display_stay
+    clear
+    press_enter_next_screen('player_stay')
+  end
 end
 
 class Dealer < Participant
   COMPUTER_NAMES = %w(Dwight_Schrute Ron_Swanson Mr_Robot TechnoBot)
+  HIT_MAX = 17
 
   def choose_name
     @name = nil
@@ -155,8 +179,22 @@ class Dealer < Participant
   end
 
   def display_visible_hand_and_points(deck)
-    puts_pause('hand_points_visible', name, visible_cards, visible_points(deck))
+    puts_pause('hand_points_visible', name, visible_cards, visible_points(deck),
+               point_or_points)
     puts ""
+  end
+
+  def stay?
+    if points > HIT_MAX
+      display_stay
+      return true
+    end
+
+    false
+  end
+
+  def display_stay
+    press_enter_next_screen('dealer_stay', name)
   end
 end
 
@@ -204,14 +242,14 @@ end
 class Game
   include Pausable
   BUSTED = 21
-  DEALER_HIT_MAX = 17
 
-  attr_accessor :deck, :player, :dealer
+  attr_accessor :deck, :player, :dealer, :winner
 
   def initialize
     @deck = Deck.new
     @player = Player.new(deck)
     @dealer = Dealer.new(deck, player)
+    @winner = nil
   end
 
   def start
@@ -221,6 +259,17 @@ class Game
   end
 
   private
+
+  def main_game
+    loop do
+      player_turn
+      dealer_turn if busted?(player) == false
+      game_results
+      break unless play_again?
+      deck = Deck.new
+      reset(player, dealer, deck)
+    end
+  end
 
   def display_welcome_message
     clear
@@ -255,16 +304,7 @@ class Game
     press_enter_next_screen('rules_5', dealer.name, BUSTED)
   end
 
-  def main_game
-    loop do
-      player_turn
-      dealer_turn if busted?(player) == false
-      #game_results
-      break unless play_again?
-      deck = Deck.new
-      reset(player, dealer, deck)
-    end
-  end
+
 
   def display_participants_cards_player_turn
     player.display_hand_and_points
@@ -276,31 +316,17 @@ class Game
     dealer.display_hand_and_points
   end
 
-  def display_busted(participant)
-    press_enter_next_screen('busted', participant.name)
-  end
-
   def busted?(participant)
     participant.points > BUSTED
   end
 
-  def player_stay?
-    answer = nil
-
-    loop do
-      prompt('hit_or_stay?')
-      answer = gets.chomp.downcase
-      break if %w(h s stay hit).include?(answer)
-      prompt('invalid_choice')
-    end
-
-    display_player_stay if answer == "s" || answer == "stay"
-    answer == "s" || answer == "stay"
+  def display_busted(participant)
+    press_enter_next_screen('busted', participant.name)
   end
 
-  def display_player_stay
-    clear
-    press_enter_next_screen('player_stay')
+  def bust(participant, other_participant)
+    display_busted(participant)
+    @winner = other_participant
   end
 
   def display_current_turn(participant)
@@ -312,26 +338,13 @@ class Game
     loop do
       display_current_turn(player)
       display_participants_cards_player_turn
-      break if player_stay?
+      break if player.stay?
       player.hit_play(deck)
       if busted?(player)
-        display_busted(player)
+        bust(player, dealer)
         break
       end
     end
-  end
-
-  def dealer_stay?
-    if dealer.points < DEALER_HIT_MAX
-      display_dealer_stay
-      return true
-    end
-
-    false
-  end
-
-  def display_dealer_stay
-    press_enter_next_screen('dealer_stay', dealer.name)
   end
 
   def prompt_to_display_dealer_move
@@ -344,13 +357,42 @@ class Game
       display_current_turn(dealer)
       display_participants_cards_dealer_turn
       prompt_to_display_dealer_move
-      break if dealer_stay?
+      break if dealer.stay?
       dealer.hit_play(deck)
       if busted?(dealer)
-        display_busted(dealer)
+        bust(dealer, player)
         break
       end
     end
+  end
+
+  def determine_winner
+    return winner if winner != nil
+    if player.points > dealer.points
+      @winner = player
+    elsif dealer.points > player.points
+      @winner = dealer
+    else
+      @winner = "tie"
+    end
+  end
+
+  def display_winner
+    puts_pause('final_score', player.points, dealer.name, dealer.points)
+    puts ''
+    case winner
+    when player
+      press_enter_next_screen('player_won', dealer.name)
+    when dealer
+      press_enter_next_screen('dealer_won', dealer.name)
+    else
+      press_enter_next_screen('tie')
+    end
+  end
+
+  def game_results
+    determine_winner
+    display_winner
   end
 
   def play_again?
@@ -373,6 +415,7 @@ class Game
   end
 
   def display_goodbye_message
+    clear
     puts_pause('goodbye')
     clear
   end

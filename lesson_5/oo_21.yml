@@ -12,14 +12,18 @@ navigation_rules: Once you are done reading a screen (including this one), press
 press_enter: (press 'enter' to continue)
 invalid_choice: Sorry, that's not a valid choice.
 current_turn: It's %{data1}'s turn!
-hand_points: = %{data1} has %{data2} for a total of %{data3} points.
-hand_points_visible: = %{data1} has %{data2} for a total of %{data3} points.
+hand_points: = %{data1} has %{data2} for a total of %{data3} %{data4}.
+hand_points_visible: = %{data1} has %{data2} for a total of %{data3} %{data4}.
 hit_or_stay?: Would you like to hit (h) or stay (s)?
-hit: 'Hit!'
+hit: Hit!
 player_stay: You chose to stay.
 prompt_for_dealer_move: Let's see what %{data1}, does!
 dealer_stay: Looks like %{data1} is happy with their hand! %{data1}, stays.
 new_card: The card added to %{data1}'s hand is a %{data2}, bringing %{data1}'s total to %{data3}.
 busted: Oh no! %{data1} busted!
+final_score: Here's the final score! You have %{data1}, %{data2} has %{data3}.
+player_won: Hooray! You beat %{data1}! Congratulations on your big win!
+dealer_won: Looks like %{data1} won this one. Better luck next time!
+tie: It's a tie! Everyone wins!
 play_again?: Would you like to play again? Please choose yes(y) or no(n).
 goodbye: Thank you for playing 21! Goodbye!
