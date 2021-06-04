@@ -17,8 +17,9 @@ hand_points_visible: = %{data1} has %{data2} for a total of %{data3} %{data4}.
 hit_or_stay?: Would you like to hit (h) or stay (s)?
 hit: Hit!
 player_stay: You chose to stay.
+reveal_hidden_card: Time to find out what %{data1} has been hiding! The hidden card is...%{data2}!
 prompt_for_dealer_move: Let's see what %{data1}, does!
-dealer_stay: Looks like %{data1} is happy with their hand! %{data1}, stays.
+dealer_stay: Looks like %{data1} is happy with their hand! %{data1} stays.
 new_card: The card added to %{data1}'s hand is a %{data2}, bringing %{data1}'s total to %{data3}.
 busted: Oh no! %{data1} busted!
 final_score: Here's the final score! You have %{data1}, %{data2} has %{data3}.

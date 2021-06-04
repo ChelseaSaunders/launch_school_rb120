@@ -10,9 +10,11 @@ module Pausable
     sleep(2)
   end
 
+  # rubocop:disable Metrics/ParameterLists
+
   def prompt(msg_key, data1='', data2='', data3='', data4='')
     msg = format(MESSAGES[msg_key], data1: data1, data2: data2, data3: data3,
-                 data4: data4)
+                                    data4: data4)
     puts(msg)
   end
 
@@ -28,6 +30,8 @@ module Pausable
     $stdin.gets
     clear
   end
+
+  # rubocop:enable Metrics/ParameterLists
 end
 
 class Participant
@@ -80,6 +84,10 @@ class Participant
     total
   end
 
+  def point_or_points
+    points == 1 ? "point" : "points"
+  end
+
   def update_points(deck, hand)
     @points = calculate_point_total(deck, hand)
   end
@@ -94,10 +102,6 @@ class Participant
       first = arr[0..-2]
       "#{first.join(', ')} and #{arr.last}"
     end
-  end
-
-  def point_or_points
-    points == 1 ? "point" : "points"
   end
 
   def display_new_card
@@ -263,7 +267,7 @@ class Game
   def main_game
     loop do
       player_turn
-      dealer_turn if busted?(player) == false
+      dealer_turn_unless_player_busted
       game_results
       break unless play_again?
       deck = Deck.new
@@ -304,18 +308,6 @@ class Game
     press_enter_next_screen('rules_5', dealer.name, BUSTED)
   end
 
-
-
-  def display_participants_cards_player_turn
-    player.display_hand_and_points
-    dealer.display_visible_hand_and_points(deck)
-  end
-
-  def display_participants_cards_dealer_turn
-    player.display_hand_and_points
-    dealer.display_hand_and_points
-  end
-
   def busted?(participant)
     participant.points > BUSTED
   end
@@ -334,6 +326,11 @@ class Game
     puts ''
   end
 
+  def display_participants_cards_player_turn
+    player.display_hand_and_points
+    dealer.display_visible_hand_and_points(deck)
+  end
+
   def player_turn
     loop do
       display_current_turn(player)
@@ -347,16 +344,32 @@ class Game
     end
   end
 
+  def dealer_turn_unless_player_busted
+    return unless busted?(player) == false
+    reveal_hidden_dealer_card
+    dealer_turn
+  end
+
+  def reveal_hidden_dealer_card
+    press_enter_next_screen('reveal_hidden_card', dealer.name, dealer.hand[0])
+    puts ''
+  end
+
   def prompt_to_display_dealer_move
     puts ''
     press_enter_next_screen('prompt_for_dealer_move', dealer.name)
+  end
+
+  def display_participants_cards_dealer_turn
+    player.display_hand_and_points
+    dealer.display_hand_and_points
+    prompt_to_display_dealer_move
   end
 
   def dealer_turn
     loop do
       display_current_turn(dealer)
       display_participants_cards_dealer_turn
-      prompt_to_display_dealer_move
       break if dealer.stay?
       dealer.hit_play(deck)
       if busted?(dealer)
@@ -367,31 +380,34 @@ class Game
   end
 
   def determine_winner
-    return winner if winner != nil
-    if player.points > dealer.points
-      @winner = player
-    elsif dealer.points > player.points
-      @winner = dealer
-    else
-      @winner = "tie"
-    end
+    return winner unless winner.nil?
+
+    @winner = if player.points > dealer.points
+                player
+              elsif dealer.points > player.points
+                dealer
+              end
+  end
+
+  def display_final_score
+    puts_pause('final_score', player.points, dealer.name, dealer.points)
+    puts ''
   end
 
   def display_winner
-    puts_pause('final_score', player.points, dealer.name, dealer.points)
-    puts ''
     case winner
     when player
       press_enter_next_screen('player_won', dealer.name)
     when dealer
       press_enter_next_screen('dealer_won', dealer.name)
-    else
+    when nil
       press_enter_next_screen('tie')
     end
   end
 
   def game_results
     determine_winner
+    display_final_score
     display_winner
   end
 
@@ -412,6 +428,7 @@ class Game
     clear
     player.reset(deck)
     dealer.reset(deck)
+    @winner = nil
   end
 
   def display_goodbye_message
