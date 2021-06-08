@@ -21,7 +21,7 @@ class SearchEngine
 end
 
 module DoesItRock
-  API_KEY = 'LS1A'
+  API_KEY = 'random_string'
 
   class NoScore; end
 

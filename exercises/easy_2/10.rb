@@ -30,7 +30,7 @@ class Person
   end
 end
 
-class Noble < Person
+class Noble < Personcd Lord
   attr_reader :title
 
   def initialize(name, title)
